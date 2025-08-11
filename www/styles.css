@@ -1,0 +1,61 @@
+.body {
+  font-family: 'Arial', sans-serif;
+  padding: 0;
+  margin: 0;
+}
+.sidebar-title-banner {
+  background-color: #3f6e91;
+  color: white;
+  padding: 15px;
+  text-align: center;
+  font-size: 1.5em;
+  font-weight: bold;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+.sidebar-bottom-banner {
+  background-color: #b3cde3;
+  color: #3f6e91;
+  padding: 5px;
+  text-align: center;
+  font-size: 0.8em;
+  position: absolute;
+  bottom: 10px;
+  left: 15px;
+  right: 15px;
+  border-radius: 5px;
+}
+.sidebar-panel {
+  background-color: #f0f0f0;
+  padding: 15px;
+  position: relative;
+  height: 100vh; /* Full vertical height */
+  border-radius: 5px;
+}
+.map-panel {
+  padding: 0; /* Remove padding to make the map fill the container */
+}
+/* Ensure the map fills its container and takes full vertical space */
+#my_map {
+  height: 100vh !important;
+  border-radius: 5px;
+}
+#my_map2 {
+  height: 90vh !important;
+  border-radius: 5px;
+}
+.bar-graph-panel {
+  padding: 15px;
+  background-color: white;
+  border-radius: 5px;
+  margin-top: 20px;
+}
+.card {
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0,0,0,.1);
+  padding: 15px;
+  margin-bottom: 20px;
+  height: 95vh !important;
+}
