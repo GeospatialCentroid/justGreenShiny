@@ -1,11 +1,21 @@
+
+/*
+#F1F0E9 grey 
+#41644A light green 
+#0D4715 dark green 
+#E9762B orange 
+*/
+
+
 .body {
   font-family: 'Arial', sans-serif;
   padding: 0;
   margin: 0;
 }
+
 .sidebar-title-banner {
-  background-color: #3f6e91;
-  color: white;
+  background-color: #0D4715;
+  color: #F1F0E9;
   padding: 15px;
   text-align: center;
   font-size: 1.5em;
@@ -14,23 +24,33 @@
   margin-bottom: 20px;
 }
 .sidebar-bottom-banner {
-  background-color: #b3cde3;
-  color: #3f6e91;
+  background-color: #41644A80;
+  color: #F1F0E9;
   padding: 5px;
   text-align: center;
   font-size: 0.8em;
-  position: absolute;
-  bottom: 10px;
   left: 15px;
   right: 15px;
   border-radius: 5px;
 }
+.page-bottom-banner {
+  background-color: #41644A80;
+  color: #F1F0E9;
+  padding: 5px;
+  text-align: center;
+  font-size: 0.8em;
+  left: 15px;
+  right: 15px;
+  border-radius: 5px;
+}
+
 .sidebar-panel {
-  background-color: #f0f0f0;
+  background-color: #F1F0E9;
   padding: 15px;
   position: relative;
-  height: 100vh; /* Full vertical height */
+  height: 100vh;
   border-radius: 5px;
+  border-right: 5px solid #E9762B50; /* Example: 5px solid black border on the right */
 }
 .map-panel {
   padding: 0; /* Remove padding to make the map fill the container */
@@ -41,21 +61,50 @@
   border-radius: 5px;
 }
 #my_map2 {
-  height: 90vh !important;
+  height: 55vh !important;
   border-radius: 5px;
 }
 .bar-graph-panel {
-  padding: 15px;
-  background-color: white;
+  padding: 5px;
+  background-color: #F1F0E9;
   border-radius: 5px;
-  margin-top: 20px;
+  margin-top: 5px;
 }
 .card {
-  background-color: white;
+  background-color: #F1F0E9;
   border: 1px solid #ddd;
   border-radius: 5px;
   box-shadow: 0 2px 4px rgba(0,0,0,.1);
   padding: 15px;
   margin-bottom: 20px;
-  height: 95vh !important;
+  height: 100vh !important;
 }
+.cardMap {
+  background-color: #F1F0E9;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0,0,0,.1);
+  padding: 15px;
+  margin-bottom: 10px;
+  height: 60vh !important;
+}
+.cardTable {
+  background-color: #F1F0E9;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0,0,0,.1);
+  padding: 15px;
+  margin-bottom: 10px;
+  height: 40vh !important;
+}
+
+.btn-block {
+  background-color: #41644A;
+  color: #F1F0E9;
+  border-radius: 5px;
+} 
+
+.btn-primary:hover {
+  color: #fff;
+  background-color: #41644A80;
+  border-color: #E9762B;

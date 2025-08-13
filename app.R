@@ -12,6 +12,7 @@ library(shiny)
 library(leaflet)
 library(ggplot2)
 library(plotly)
+library(DT)
 
 # Define the user interface (UI)
 ui <- fluidPage(# --- Custom CSS for banners and layout ---
@@ -53,17 +54,17 @@ server <- function(input, output, session) {
         column(
           width = 4,
           class = "sidebar-panel",
-          div(class = "sidebar-title-banner", "City Level Summary"),
-          h4("Selections"),
+          div(class = "sidebar-title-banner", "JustGreen"),
+          p("Use the selectors below to look at health benifits provided by exposure to green vegetation for the two hundred most populated cities within the United States."),
           selectInput(
             "city_selector",
             "Select City:",
             choices = c("New York", "Los Angeles", "Chicago", "Houston", "Phoenix")
           ),
           selectInput(
-            "metric_selector",
-            "Select Metric:",
-            choices = c("Mortality", "Dementia", "Stroke")
+            "ndvi_selector",
+            "NDVI Selector:",
+            choices = c("Measured NDVI", "10% increase")
           ),
           # Text outputs for city data
           tags$b("Population:"),
@@ -102,34 +103,33 @@ server <- function(input, output, session) {
     } else if (current_page() == "page2") {
       # UI for Page 2: Map on Right with a card object
       fluidRow(
+        div(class = "sidebar-title-banner", "Census Tract Summary"),
         column(
-          width = 4,
-          class = "sidebar-panel",
-          div(class = "sidebar-title-banner", "Census Tract Summary"),
-          actionButton("to_page1", "Go to City Summary", class = "btn-block btn-primary"),
+          width = 8,
           div(
-            style = "margin-top: 10px;",
-            actionButton("to_page3", "Go to About Page", class = "btn-block btn-primary")
+            class = "cardMap",
+            leafletOutput("my_map2")),
+          div(
+            # class = "cardTable",
+            DT::dataTableOutput('table')
+            )
           ),
-          div(class = "sidebar-bottom-banner", "Updated 08-2025")
-        ),
-        column(width = 4,
-               div(
-          class = "card",
-          leafletOutput("my_map2", height = )
-        )),
         column(
           width = 4 ,
           div(
+            div(
+              actionButton("to_page2", "Go to Census Tract", class = "btn-block btn-primary")
+            ),
+            div(
+              actionButton("to_page3", "About Page", class = "btn-block btn-primary")
+            ),
             class = "card",
-            h4("Plot 1"),
             plotlyOutput("plotly_plot1", height = "250px"),
-            h4("Plot 2"),
-            plotlyOutput("plotly_plot2", height = "250px")
+            plotlyOutput("plotly_plot2", height = "250px"),
+            plotlyOutput("plotly_plot3", height = "250px")
           )
         )
       )
-      
     } else {
       # UI for Page 3: About Page
       fluidRow(
@@ -139,7 +139,6 @@ server <- function(input, output, session) {
           div(class = "sidebar-title-banner", "About"),
           actionButton("to_page1", "Go to City Summary", class = "btn-block btn-primary"),
           div(
-            style = "margin-top: 10px;",
             actionButton("to_page2", "Go to Census Tract Summary", class = "btn-block btn-primary")
           ),
           div(class = "sidebar-bottom-banner", "Updated 08-2025")
@@ -208,6 +207,9 @@ server <- function(input, output, session) {
       )
   })
   
+  # render the table for page 2 
+  output$table <- DT::renderDataTable(iris)
+  
   # Observer for marker clicks, only on page 1 where the dropdown exists
   observeEvent(input$my_map_marker_click, {
     req(current_page() == "page1")
@@ -257,10 +259,9 @@ server <- function(input, output, session) {
     data$Category <- factor(
       data$Category,
       levels = c(
-        "Measured",
-        "Low Confidence",
-        "High Confidence",
-        "10% Increase"
+        "Mortality",
+        "Dementia",
+        "Stroke"
       )
     )
     ggplot(data, aes(x = Category, y = Value, fill = fill_color)) +
@@ -286,6 +287,16 @@ server <- function(input, output, session) {
   })
   
   output$plotly_plot2 <- renderPlotly({
+    req(current_page() == "page2")
+    plot_ly(
+      data = cities,
+      labels = ~ name,
+      values = ~ bar_value,
+      type = "pie",
+      name = "Bar Value"
+    )
+  })
+  output$plotly_plot3 <- renderPlotly({
     req(current_page() == "page2")
     plot_ly(
       data = cities,
