@@ -14,6 +14,16 @@ library(ggplot2)
 library(plotly)
 library(DT)
 
+
+
+# parameters and datasets -------------------------------------------------
+zoom_switch <- 9 
+# read in city object 
+cityGPKG <- sf::st_read("data/top200_simple.gpkg")
+cityDF <- as.data.frame(cityGPKG)
+cityCentroid <- sf::st_read("data/top200_centroid.gpkg")
+
+
 # Define the user interface (UI)
 ui <- fluidPage(# --- Custom CSS for banners and layout ---
   includeCSS("www/styles.css"),
@@ -59,7 +69,7 @@ server <- function(input, output, session) {
           selectInput(
             "city_selector",
             "Select City:",
-            choices = c("New York", "Los Angeles", "Chicago", "Houston", "Phoenix")
+            choices = sort(cityGPKG$fullCity)
           ),
           selectInput(
             "ndvi_selector",
@@ -67,11 +77,11 @@ server <- function(input, output, session) {
             choices = c("Measured NDVI", "10% increase")
           ),
           # Text outputs for city data
-          tags$b("Population:"),
+          tags$b("Population Over 20:"),
           textOutput("population_output"),
           tags$b("Average NDVI:"),
           textOutput("ndvi_output"),
-          tags$b("Rate:"),
+          tags$b("Mortality Rate:"),
           textOutput("rate_output"),
           checkboxGroupInput(
             "confidence_checkboxes",
@@ -81,7 +91,7 @@ server <- function(input, output, session) {
           div(
             class = "bar-graph-panel",
             h5("Estimated Lives Save"),
-            plotOutput("bar_graph", height = "200px")
+            plotlyOutput("bar_graph", height = "200px")
           ),
           div(
             style = "margin-top: 20px;",
@@ -172,22 +182,64 @@ server <- function(input, output, session) {
       )
     }
   })
+
+  # palette 
+  ## this will need to be a reactive feature at some point 
+  pal1 <- colorNumeric(
+    palette = "BuGn", #YlGn worked ok too 
+    domain = as.numeric(cityGPKG$meanNDVI)
+  )
+  
   
   # Render the leaflet map for Page 1
   output$my_map <- renderLeaflet({
-    req(current_page() == "page1")
+    # req(current_page() == "page1")
     leaflet() %>%
       addTiles() %>%
       setView(lng = -99.9018,
               lat = 39.3812,
               zoom = 4) %>%
-      addMarkers(
-        data = cities,
-        lng = ~ lng,
-        lat = ~ lat,
-        popup = ~ name,
-        layerId = ~ name
+      addCircleMarkers(
+        data = cityCentroid,
+        group = "cityPoints",
+        radius = 5,
+        stroke = FALSE,
+        fillColor = ~pal1(meanNDVI),
+        fillOpacity = 0.8,
+        popup = ~popup
+      )|>
+      addPolygons(
+        data = cityGPKG,
+        group = "cityPoly",
+        fillColor = ~pal1(meanNDVI),
+        color = "black", # Outline color
+        weight = 0.5, # Outline thickness
+        fillOpacity = 0.8,
+        popup = ~popup
       )
+  })
+  # leaflet proxy to change the marker or polygons 
+  # This "observer" listens for changes in the map's zoom level
+  ### this is not working as expected, check how the leaflet proxy funtion is working. 
+  ### that said it does work, even with the fact both items stay present the work
+  ### consider switch to a 
+  observeEvent(input$map_zoom, {
+    req(current_page() == "page1")
+    # Get the proxy for the existing map to modify it
+    proxy <- leafletProxy("my_map")
+    current_zoom <- input$map_zoom
+    
+    if (current_zoom >= zoom_switch) {
+      # If zoomed in, show polygons and hide markers
+      proxy %>%
+        showGroup("cityPoly") %>%
+        hideGroup("cityPoints")
+    } else {
+      # If zoomed out, show markers and hide polygons
+      proxy %>%
+        showGroup("cityPoints") %>%
+        hideGroup("cityPoly")
+    }
   })
   
   # Render the leaflet map for Page 2
@@ -198,12 +250,14 @@ server <- function(input, output, session) {
       setView(lng = -99.9018,
               lat = 39.3812,
               zoom = 4) %>%
-      addMarkers(
-        data = cities,
-        lng = ~ lng,
-        lat = ~ lat,
-        popup = ~ name,
-        layerId = ~ name
+      addCircleMarkers(
+        data = cityCentroid,
+        group = "cityPoints",
+        radius = 5,
+        stroke = FALSE,
+        fillColor = ~pal1(meanNDVI),
+        fillOpacity = 0.8,
+        popup = ~popup
       )
   })
   
@@ -217,22 +271,39 @@ server <- function(input, output, session) {
     updateSelectInput(session, "city_selector", selected = clicked_city)
   })
   
+
+  # render the text outputs  ------------------------------------------------
+  selectedData  <- reactive({cityDF |>
+    dplyr::filter(fullCity == input$city_selector)}) 
+  
+  output$population_output <- renderText({format(selectedData()$popOver20_2023,  big.mark = ",")}) 
+  output$ndvi_output <- renderText({round(selectedData()$meanNDVI, 2) }) 
+  output$rate_output <- renderText({paste0(round(selectedData()$mortalityRate,4))}) 
+  
   # Render the dynamic bar graph for Page 1
-  output$bar_graph <- renderPlot({
+  output$bar_graph <- renderPlotly({
     req(current_page() == "page1")
-    base_value <- cities$bar_value[cities$name == input$city_selector]
+    
+    
+    # select the city and pull all values of interest 
+    selectedData1  <- cityDF |>
+      dplyr::filter(fullCity == input$city_selector) |>
+      # dplyr::filter(fullCity == "Madison city, Wisconsin") |>
+      dplyr::select(cityFormat, meanNDVI, popOver20_2023, mortalityRate, ls_Mortality, 
+                    ls_Mortality_low ,ls_Mortality_high,ls_Mortality10)
+    
     data <- data.frame(
-      Category = "Measured",
-      Value = base_value,
-      fill_color = "#3f6e91"
+      Category = "Current Lives Saved",
+      Value = abs(selectedData1$ls_Mortality),
+      fill_color = "#31a354"
     )
     if ("Low Confidence" %in% input$confidence_checkboxes) {
       data <- rbind(
         data,
         data.frame(
           Category = "Low Confidence",
-          Value = base_value * 0.9,
-          fill_color = "#6c98ba"
+          Value = abs(selectedData1$ls_Mortality_low),
+          fill_color = "#78c679"
         )
       )
     }
@@ -241,8 +312,8 @@ server <- function(input, output, session) {
         data,
         data.frame(
           Category = "High Confidence",
-          Value = base_value * 1.1,
-          fill_color = "#6c98ba"
+          Value = abs(selectedData1$ls_Mortality_high),
+          fill_color = "#c2e699"
         )
       )
     }
@@ -251,27 +322,36 @@ server <- function(input, output, session) {
         data,
         data.frame(
           Category = "10% Increase",
-          Value = base_value * 1.1,
-          fill_color = "#6c98ba"
+          Value = abs(selectedData1$ls_Mortality10),
+          fill_color = "#006837"
         )
       )
     }
-    data$Category <- factor(
-      data$Category,
-      levels = c(
-        "Mortality",
-        "Dementia",
-        "Stroke"
-      )
+    # data$Category <- factor(
+    #   data$Category,
+    #   levels = c(
+    #     "Current Lives Saved",
+    #     "Low Confidence",
+    #     "High Confidence",
+    #     "10% Increase" 
+    #   )
+    # )
+    
+    
+    plot_ly(
+      data = data,
+      x = ~Category,
+      y = ~Value,
+      color = ~I(fill_color),
+      type = "bar"
+    )%>% layout(
+      title = paste0(selectedData1$cityFormat, "; 2023 population over 20: ", 
+                     format(selectedData1$popOver20_2023,  big.mark = ",")),
+      xaxis = list(title = NA), # How can we hide this title?
+      yaxis = list(title = "Lives Saved")      # How can we change this title?
     )
-    ggplot(data, aes(x = Category, y = Value, fill = fill_color)) +
-      geom_bar(stat = "identity") +
-      scale_fill_identity() +
-      theme_minimal() +
-      labs(x = NULL, y = "Value") +
-      theme(legend.position = "none",
-            axis.text.x = element_text(angle = 45, hjust = 1)) +
-      ylim(0, 100)
+    
+    
   })
   
   # Render the Plotly plots for Page 2
