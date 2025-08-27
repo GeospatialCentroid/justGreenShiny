@@ -69,7 +69,8 @@ server <- function(input, output, session) {
           selectInput(
             "city_selector",
             "Select City:",
-            choices = sort(cityGPKG$fullCity)
+            choices = sort(cityGPKG$fullCity),
+            selected = NULL
           ),
           selectInput(
             "ndvi_selector",
@@ -107,7 +108,7 @@ server <- function(input, output, session) {
         column(
           width = 8,
           class = "map-panel",
-          leafletOutput("my_map")
+          leafletOutput("map1")
         )
       )
     } else if (current_page() == "page2") {
@@ -118,7 +119,7 @@ server <- function(input, output, session) {
           width = 8,
           div(
             class = "cardMap",
-            leafletOutput("my_map2")),
+            leafletOutput("map12")),
           div(
             # class = "cardTable",
             DT::dataTableOutput('table')
@@ -192,13 +193,13 @@ server <- function(input, output, session) {
   
   
   # Render the leaflet map for Page 1
-  output$my_map <- renderLeaflet({
+  output$map1 <- renderLeaflet({
     # req(current_page() == "page1")
-    leaflet() %>%
-      addTiles() %>%
+    leaflet() |>
+      addTiles() |>
       setView(lng = -99.9018,
               lat = 39.3812,
-              zoom = 4) %>%
+              zoom = 4) |>
       addCircleMarkers(
         data = cityCentroid,
         group = "cityPoints",
@@ -224,32 +225,31 @@ server <- function(input, output, session) {
   ### that said it does work, even with the fact both items stay present the work
   ### consider switch to a 
   observeEvent(input$map_zoom, {
-    req(current_page() == "page1")
+    # req(current_page() == "page1")
     # Get the proxy for the existing map to modify it
-    proxy <- leafletProxy("my_map")
     current_zoom <- input$map_zoom
     
     if (current_zoom >= zoom_switch) {
       # If zoomed in, show polygons and hide markers
-      proxy %>%
-        showGroup("cityPoly") %>%
+      leafletProxy("map1") |>
+        showGroup("cityPoly") |>
         hideGroup("cityPoints")
     } else {
       # If zoomed out, show markers and hide polygons
-      proxy %>%
-        showGroup("cityPoints") %>%
+      leafletProxy("map1") |>
+        showGroup("cityPoints") |>
         hideGroup("cityPoly")
     }
   })
   
   # Render the leaflet map for Page 2
-  output$my_map2 <- renderLeaflet({
-    req(current_page() == "page2")
-    leaflet() %>%
-      addTiles() %>%
+  output$map12 <- renderLeaflet({
+    # req(current_page() == "page2")
+    leaflet() |>
+      addTiles() |>
       setView(lng = -99.9018,
               lat = 39.3812,
-              zoom = 4) %>%
+              zoom = 4) |>
       addCircleMarkers(
         data = cityCentroid,
         group = "cityPoints",
@@ -265,11 +265,32 @@ server <- function(input, output, session) {
   output$table <- DT::renderDataTable(iris)
   
   # Observer for marker clicks, only on page 1 where the dropdown exists
-  observeEvent(input$my_map_marker_click, {
-    req(current_page() == "page1")
-    clicked_city <- input$my_map_marker_click$id
+  observeEvent(input$map1_marker_click, {
+    # req(current_page() == "page1")
+    clicked_city <- input$map1_marker_click$id
     updateSelectInput(session, "city_selector", selected = clicked_city)
   })
+  
+  # --- Observe for City Selection ---
+  # This observer triggers whenever the user selects a new city from the dropdown.
+  # It uses leafletProxy to update the existing map instead of redrawing it,
+  # which is much more efficient.
+  observeEvent(input$city_select, {
+    # Find the selected city's data from the data frame
+    selected_city <- cityCentroid[cityCentroid$fullCity == input$city_select, ] |>
+      sf::st_coordinates()
+    # define lat lon values
+    longitude <- selected_city[1, "X"]
+    latitude <- selected_city[1, "Y"]
+    
+    # Use a proxy to interact with the already-rendered map
+    leafletProxy("map1")
+      # Set the view to the selected city's coordinates with a closer zoom level
+      setView(lng = longitude, lat = latitude, zoom = 12)
+    
+  })
+  
+  
   
 
   # render the text outputs  ------------------------------------------------
@@ -282,7 +303,7 @@ server <- function(input, output, session) {
   
   # Render the dynamic bar graph for Page 1
   output$bar_graph <- renderPlotly({
-    req(current_page() == "page1")
+    # req(current_page() == "page1")
     
     
     # select the city and pull all values of interest 
@@ -344,7 +365,7 @@ server <- function(input, output, session) {
       y = ~Value,
       color = ~I(fill_color),
       type = "bar"
-    )%>% layout(
+    )|> layout(
       title = paste0(selectedData1$cityFormat, "; 2023 population over 20: ", 
                      format(selectedData1$popOver20_2023,  big.mark = ",")),
       xaxis = list(title = NA), # How can we hide this title?
@@ -356,7 +377,7 @@ server <- function(input, output, session) {
   
   # Render the Plotly plots for Page 2
   output$plotly_plot1 <- renderPlotly({
-    req(current_page() == "page2")
+    # req(current_page() == "page2")
     plot_ly(
       data = cities,
       x = ~ name,
@@ -367,7 +388,7 @@ server <- function(input, output, session) {
   })
   
   output$plotly_plot2 <- renderPlotly({
-    req(current_page() == "page2")
+    # req(current_page() == "page2")
     plot_ly(
       data = cities,
       labels = ~ name,
