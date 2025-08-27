@@ -8,9 +8,10 @@ s1 <- sf::st_read("preprocessing/data/top200Cities.gpkg") |>
 # read in csv for reference 
 c1 <- st_read("preprocessing/data/allCities_2023_morDemStroke_with10percentAdjust.csv")
 # convert values from chr to numberic 
-colCovert <- names(c1)[5:76]
+colCovert <- names(c1)[5:103]
 c1 <- c1 |> 
-  mutate(across(.cols = all_of(colCovert), .fns = as.numeric))
+  mutate(across(.cols = all_of(colCovert), .fns = as.numeric))|>
+  dplyr::mutate("NDVI_plus10" = (meanNDVI * 0.1) + meanNDVI)
 #reformat a new city option 
 c1 <- c1 |>
   dplyr::mutate(

@@ -1,20 +1,10 @@
-# app.R
-# This application demonstrates conditional UI rendering in R Shiny.
-
-# Install required packages if you don't have them
-# install.packages("shiny")
-# install.packages("leaflet")
-# install.packages("ggplot2")
-# install.packages("plotly")  # New library for Plotly charts
-
-# Load necessary libraries
+# Load libraries
 library(shiny)
 library(leaflet)
 library(ggplot2)
 library(plotly)
 library(DT)
-
-
+library(shinyBS)
 
 # parameters and datasets -------------------------------------------------
 zoom_switch <- 9 
@@ -23,295 +13,304 @@ cityGPKG <- sf::st_read("data/top200_simple.gpkg")
 cityDF <- as.data.frame(cityGPKG)
 cityCentroid <- sf::st_read("data/top200_centroid.gpkg")
 
-
-# Define the user interface (UI)
-ui <- fluidPage(# --- Custom CSS for banners and layout ---
-  includeCSS("www/styles.css"),
-  # The UI is now a single output that will render the correct page
-  uiOutput("page_content")
-  )
-
-# Define the server logic
-server <- function(input, output, session) {
-  # --- Create mock data for city locations and bar graph values ---
-  cities <- data.frame(
-    name = c("New York", "Los Angeles", "Chicago", "Houston", "Phoenix"),
-    lat = c(40.71, 34.05, 41.88, 29.76, 33.45),
-    lng = c(-74.01, -118.24, -87.63, -95.37, -112.07),
-    bar_value = c(65, 80, 50, 75, 40) # Mock data for the bar graph
-  )
+ui <- fluidPage(
+  # --- Custom CSS for banners and layout ---
+  # includeCSS("www/styles.css"), # Assuming you have a www/styles.css file
+  tags$head(
+    tags$style(HTML("
+      .sidebar-panel { padding: 15px; background-color: #f8f9fa; border-right: 1px solid #dee2e6; height: 100vh; }
+      .map-panel { padding: 0; }
+      .sidebar-title-banner { background-color: #006837; color: white; padding: 10px; text-align: center; font-size: 1.5em; }
+      .sidebar-bottom-banner { background-color: #f0f0f0; color: #333; padding: 5px; text-align: center; font-size: 0.8em; position: absolute; bottom: 0; width: 100%; left:0; }
+      .info-box { border: 1px solid #ddd; border-radius: 5px; padding: 10px; margin-top: 15px; margin-bottom: 15px; background-color: #ffffff; }
+      .tooltip-inner {
+          background-color: #006837; /* A dark green to match your theme */
+          color: #FFF; /* White text for contrast */
+          max-width: 500px; /* Adjust the maximum width */
+          text-align: center; /* Align text to the left if needed */}
+      .tooltip.right .tooltip-arrow { border-right-color: #006837;}
+    "))
+  ),
   
+  # --- UI defined with conditionalPanel instead of renderUI ---
+  conditionalPanel(
+    condition = "output.page_tracker == 'page1'",
+    # UI for Page 1: Map and Controls
+    fluidRow(
+      column(
+        width = 4,
+        class = "sidebar-panel",
+        div(class = "sidebar-title-banner", "JustGreen"),
+        p("Use the selectors below..."),
+        selectInput(
+          "city_selector",
+          "Select City:",
+          choices = c("Select a City" = "", sort(cityGPKG$fullCity)),
+          selected = ""
+        ),
+        selectInput("map1_selector", 
+                    "Health Benefit Selector:", 
+                    choices = c("Current Vegetation Levels",
+                                "Lives Saved",
+                                "Stroke Cases Prevented",
+                                "Dementia Cases Prevented")),
+        div(class = "info-box",
+          div(id = "pop_info",tags$b("Population Over 20: "), textOutput("population_output", inline = TRUE)),
+          div(id = "ndvi_info", tags$b("Current Vegetation Levels:"), textOutput("ndvi_output", inline = TRUE)),
+          div(id = "ls_info", tags$b("Lives Saved:"), textOutput("LS_output", inline = TRUE)),
+          div(id = "stroke_info", tags$b("Stroke Cases Prevented:"), textOutput("SCP_output", inline = TRUE)),
+          div(id = "deme_info", tags$b("Dementia Cases Prevented:"), textOutput("DCP_output", inline = TRUE))
+        ),
+        shinyBS::bsTooltip(id = "pop_info", title = "Total population over the age of 20 for the selected city.", placement = "right", trigger = "hover"),
+        shinyBS::bsTooltip(id = "ndvi_info", title = "Amount of vegetation measures by Normalized Difference Vegetation Index (NDVI)", placement = "right", trigger = "hover"),
+        shinyBS::bsTooltip(id = "ls_info", title = "Lives per 100,000 saved due to vegetation exposure.", placement = "right", trigger = "hover"),
+        shinyBS::bsTooltip(id = "stroke_info", title = "Stroke incidences per 100,000 prevented due to vegetation exposure.", placement = "right", trigger = "hover"),
+        shinyBS::bsTooltip(id = "deme_info", title = "Dementia cases per 100,000 prevented due to vegetation exposure.", placement = "right", trigger = "hover"),
+        
+        # checkboxGroupInput("confidence_checkboxes", "Confidence Level:", choices = c("Low Confidence", "High Confidence", "10% Increase")),
+        # div(class = "bar-graph-panel", h5("Estimated Lives Saved"), plotlyOutput("bar_graph", height = "200px")),
+        # div(style = "margin-top: 20px;", actionButton("to_page2", "Go to Census Tract", class = "btn-block btn-primary")),
+        # br(),
+        # div(style = "margin-top: 10px;", actionButton("to_page3", "About Page", class = "btn-block btn-primary")),
+        # div(class = "sidebar-bottom-banner", "Updated 08-2025")
+      ),
+      column(width = 8, class = "map-panel", leafletOutput("map1", height = "100vh"))
+    )
+  ),
+  conditionalPanel(
+    condition = "output.page_tracker == 'page2'",
+    # UI for Page 2
+    fluidRow(
+      column(12, h2("Page 2: Census Tract Summary"), actionButton("to_page1", "Back to City Summary"))
+    )
+  ),
+  conditionalPanel(
+    condition = "output.page_tracker == 'page3'",
+    # UI for Page 3
+    fluidRow(
+      column(12, h2("Page 3: About Page"), actionButton("to_page1", "Back to City Summary"))
+    )
+  )
+)
+
+
+# Server ------------------------------------------------------------------
+server <- function(input, output, session) {
   # Reactive value to store the current page
   current_page <- reactiveVal("page1")
   
   # Observers to switch pages
-  observeEvent(input$to_page1, {
-    current_page("page1")
-  })
+  observeEvent(input$to_page1, { current_page("page1") })
+  observeEvent(input$to_page2, { current_page("page2") })
+  observeEvent(input$to_page3, { current_page("page3") })
   
-  observeEvent(input$to_page2, {
-    current_page("page2")
+  # --- Page Tracker for conditionalPanel ---
+  # This output's value is what the conditionalPanels in the UI check against.
+  output$page_tracker <- reactive({
+    current_page()
   })
-  observeEvent(input$to_page3, {
-    current_page("page3")
-  })
+  # This is crucial! It allows the conditionalPanel to check the output's value
+  # even when the output itself is not displayed.
+  outputOptions(output, "page_tracker", suspendWhenHidden = FALSE)
   
-  # Render the UI based on the current_page value
-  output$page_content <- renderUI({
-    if (current_page() == "page1") {
-      # UI for Page 1: Map and Controls (map on right)
-      fluidRow(
-        column(
-          width = 4,
-          class = "sidebar-panel",
-          div(class = "sidebar-title-banner", "JustGreen"),
-          p("Use the selectors below to look at health benifits provided by exposure to green vegetation for the two hundred most populated cities within the United States."),
-          selectInput(
-            "city_selector",
-            "Select City:",
-            choices = sort(cityGPKG$fullCity),
-            selected = NULL
-          ),
-          selectInput(
-            "ndvi_selector",
-            "NDVI Selector:",
-            choices = c("Measured NDVI", "10% increase")
-          ),
-          # Text outputs for city data
-          tags$b("Population Over 20:"),
-          textOutput("population_output"),
-          tags$b("Average NDVI:"),
-          textOutput("ndvi_output"),
-          tags$b("Mortality Rate:"),
-          textOutput("rate_output"),
-          checkboxGroupInput(
-            "confidence_checkboxes",
-            "Confidence Level:",
-            choices = c("Low Confidence", "High Confidence", "10% Increase")
-          ),
-          div(
-            class = "bar-graph-panel",
-            h5("Estimated Lives Save"),
-            plotlyOutput("bar_graph", height = "200px")
-          ),
-          div(
-            style = "margin-top: 20px;",
-            actionButton("to_page2", "Go to Census Tract", class = "btn-block btn-primary")
-          ),
-          br(),
-          div(
-            style = "margin-top: 10px;",
-            actionButton("to_page3", "About Page", class = "btn-block btn-primary")
-          ),
-          div(class = "sidebar-bottom-banner", "Updated 08-2025")
-        ),
-        column(
-          width = 8,
-          class = "map-panel",
-          leafletOutput("map1")
-        )
-      )
-    } else if (current_page() == "page2") {
-      # UI for Page 2: Map on Right with a card object
-      fluidRow(
-        div(class = "sidebar-title-banner", "Census Tract Summary"),
-        column(
-          width = 8,
-          div(
-            class = "cardMap",
-            leafletOutput("map12")),
-          div(
-            # class = "cardTable",
-            DT::dataTableOutput('table')
-            )
-          ),
-        column(
-          width = 4 ,
-          div(
-            div(
-              actionButton("to_page2", "Go to Census Tract", class = "btn-block btn-primary")
-            ),
-            div(
-              actionButton("to_page3", "About Page", class = "btn-block btn-primary")
-            ),
-            class = "card",
-            plotlyOutput("plotly_plot1", height = "250px"),
-            plotlyOutput("plotly_plot2", height = "250px"),
-            plotlyOutput("plotly_plot3", height = "250px")
-          )
-        )
-      )
-    } else {
-      # UI for Page 3: About Page
-      fluidRow(
-        column(
-          width = 4,
-          class = "sidebar-panel",
-          div(class = "sidebar-title-banner", "About"),
-          actionButton("to_page1", "Go to City Summary", class = "btn-block btn-primary"),
-          div(
-            actionButton("to_page2", "Go to Census Tract Summary", class = "btn-block btn-primary")
-          ),
-          div(class = "sidebar-bottom-banner", "Updated 08-2025")
-        ),
-        column(
-          width = 8,
-          div(
-            class = "container",
-            style = "padding: 20px;",
-            h2("About This Application"),
-            p(
-              "This application demonstrates relationship between exposure to green plants as measured through NDVI and health outcomes."
-            ),
-            p(
-              "."
-            ),
-            h4("References "),
-            tags$ul(
-              tags$li("past paper 1 "),
-              tags$li("past paper 2"),
-              tags$li(
-                "Current Paper"
-              )
-            ),
-            h4("Credits:"),
-            p(
-              "Developed using the R Shiny, Leaflet, ggplot2, and plotly packages."
-            )
-          )
-        )
-      )
-    }
-  })
-
-  # palette 
-  ## this will need to be a reactive feature at some point 
-  pal1 <- colorNumeric(
-    palette = "BuGn", #YlGn worked ok too 
-    domain = as.numeric(cityGPKG$meanNDVI)
-  )
   
+  # Palette for mean NDVI 
+  pal1 <- colorNumeric(palette = "BuGn", domain = as.numeric(cityGPKG$meanNDVI))
+  # palette for lives saved 
+  pal2 <- colorNumeric(palette = "PuBuGn", domain = as.numeric(cityGPKG$ls_Mortality_Rate) , reverse = TRUE)
+  # palette for stroke cases reduced 
+  pal3 <- colorNumeric(palette = "BuPu", domain = as.numeric(cityGPKG$ls_Stroke_Rate) , reverse = TRUE)
+  # palette for demetia cases reduced 
+  pal4 <- colorNumeric(palette = "OrRd", domain = as.numeric(cityGPKG$ls_Dementia_Rate) , reverse = TRUE)
   
   # Render the leaflet map for Page 1
   output$map1 <- renderLeaflet({
-    # req(current_page() == "page1")
-    leaflet() |>
-      addTiles() |>
-      setView(lng = -99.9018,
-              lat = 39.3812,
-              zoom = 4) |>
+    leaflet() %>%
+      addProviderTiles(providers$CartoDB.Positron, group = "CartoDB") %>%
+      addTiles(group = "OpenStreetMap") %>%
+      addProviderTiles(providers$Esri.WorldImagery, group = "Esri Imagery") %>%
+      setView(lng = -99.9018, lat = 39.3812, zoom = 3) %>%
       addCircleMarkers(
         data = cityCentroid,
         group = "cityPoints",
         radius = 5,
         stroke = FALSE,
+        layerId = ~fullCity, # Assign layerId for click events
         fillColor = ~pal1(meanNDVI),
         fillOpacity = 0.8,
-        popup = ~popup
-      )|>
+        popup = ~popup,
+        label = ~fullCity 
+      ) %>%
       addPolygons(
         data = cityGPKG,
         group = "cityPoly",
         fillColor = ~pal1(meanNDVI),
-        color = "black", # Outline color
-        weight = 0.5, # Outline thickness
+        color = "black",
+        weight = 0.5,
+        layerId = ~fullCity, # Assign layerId for click events
         fillOpacity = 0.8,
-        popup = ~popup
+        popup = ~popup,
+        label = ~fullCity 
+      )|>
+      addLayersControl(
+        # Specify the layers to be used as base maps
+        baseGroups = c("CartoDB", "OpenStreetMap", "Esri Imagery"),
+        # Set the position of the control box on the map
+        options = layersControlOptions(collapsed = FALSE)
       )
   })
-  # leaflet proxy to change the marker or polygons 
-  # This "observer" listens for changes in the map's zoom level
-  ### this is not working as expected, check how the leaflet proxy funtion is working. 
-  ### that said it does work, even with the fact both items stay present the work
-  ### consider switch to a 
-  observeEvent(input$map_zoom, {
-    # req(current_page() == "page1")
-    # Get the proxy for the existing map to modify it
-    current_zoom <- input$map_zoom
+  # Observer to update map colors based on NDVI selector ---
+  observeEvent(input$map1_selector, {
+    req(current_page() == "page1")
     
-    if (current_zoom >= zoom_switch) {
-      # If zoomed in, show polygons and hide markers
-      leafletProxy("map1") |>
-        showGroup("cityPoly") |>
-        hideGroup("cityPoints")
-    } else {
-      # If zoomed out, show markers and hide polygons
-      leafletProxy("map1") |>
-        showGroup("cityPoints") |>
-        hideGroup("cityPoly")
+    proxy <- leafletProxy("map1")
+    
+    # Clear existing shapes and markers
+    proxy %>% clearGroup("cityPoly") %>% clearGroup("cityPoints")
+    
+    # Determine which palette and data to use
+    if (input$map1_selector == "Current Vegetation Levels") {
+      current_pal <- pal1
+      data_col <- "meanNDVI"
+    } else if (input$map1_selector == "Lives Saved") {
+      current_pal <- pal2
+      data_col <- "ls_Mortality_Rate"
+    } else if (input$map1_selector == "Stroke Cases Prevented") {
+      current_pal <- pal3
+      data_col <- "ls_Stroke_Rate"
+    } else { # Default case: "Measured NDVI"
+      current_pal <- pal4
+      data_col <- "ls_Dementia_Rate"
     }
-  })
-  
-  # Render the leaflet map for Page 2
-  output$map12 <- renderLeaflet({
-    # req(current_page() == "page2")
-    leaflet() |>
-      addTiles() |>
-      setView(lng = -99.9018,
-              lat = 39.3812,
-              zoom = 4) |>
+    
+    # Redraw the map layers with the selected data and palette
+    proxy %>%
       addCircleMarkers(
         data = cityCentroid,
         group = "cityPoints",
+        layerId = ~fullCity,
         radius = 5,
         stroke = FALSE,
-        fillColor = ~pal1(meanNDVI),
+        fillColor = ~current_pal(get(data_col)), # Use the selected palette and data
         fillOpacity = 0.8,
-        popup = ~popup
+        popup = ~popup,
+        label = ~fullCity
+      ) %>%
+      addPolygons(
+        data = cityGPKG,
+        group = "cityPoly",
+        layerId = ~fullCity,
+        fillColor = ~current_pal(get(data_col)), # Use the selected palette and data
+        color = "black",
+        weight = 0.5,
+        fillOpacity = 0.8,
+        popup = ~popup,
+        label = ~fullCity
       )
   })
+    
+    
+  # --- Leaflet proxy for zoom switch ---
+  # This observer now checks if the current page is "page1" before trying to update the map.
+  observe({
+    req(input$map1_zoom, current_page() == "page1")
+    
+    current_zoom <- input$map1_zoom
+    proxy <- leafletProxy("map1")
+    
+    if (current_zoom >= zoom_switch) {
+      proxy %>% 
+        showGroup("cityPoly") %>% 
+        hideGroup("cityPoints")
+    } else {
+      proxy %>% 
+        showGroup("cityPoints") %>% 
+        hideGroup("cityPoly")
+        # hideGroup("highlight")
+    }
+  })
   
-  # render the table for page 2 
-  output$table <- DT::renderDataTable(iris)
+  # --- Observer for City Selection ---
+  # This observer also checks if the current page is "page1" and uses req() for safety.
+  observeEvent(input$city_selector, {
+    req(input$city_selector, current_page() == "page1")
+    # set proxy object 
+    proxy <- leafletProxy("map1")
+    
+    # First, clear any existing highlight
+    proxy %>% removeShape("highlight_shape")
+    
+    # Only proceed if a city is actually selected
+    if (input$city_selector != "") {
+      selected_city_coords <- cityCentroid[cityCentroid$fullCity == input$city_selector, ] %>%
+        sf::st_coordinates()
+      
+      longitude <- as.numeric(selected_city_coords[1, "X"])
+      latitude <- as.numeric(selected_city_coords[1, "Y"])
+      
+      # Zoom to the city
+      proxy %>% setView(lng = longitude, lat = latitude, zoom = 11)
+      
+      # Add the highlight polygon
+      selected_polygon <- cityGPKG[cityGPKG$fullCity == input$city_selector, ]
+      
+      proxy %>% addPolygons(
+        data = selected_polygon,
+        layerId = "highlight_shape", # Give the highlight a unique ID
+        color = "#FCAF62",
+        weight = 3,
+        group = "highlight",
+        fillOpacity = 0 # Make it transparent so the original color shows through
+      )
+    }
+  })
   
-  # Observer for marker clicks, only on page 1 where the dropdown exists
-  observeEvent(input$map1_marker_click, {
-    # req(current_page() == "page1")
-    clicked_city <- input$map1_marker_click$id
+  
+  # map click changes the side bar selector
+  observeEvent(input$map1_shape_click, {
+    # Ensure we are on page 1 and a shape was actually clicked
+    req(input$map1_shape_click, current_page() == "page1")
+    
+    # Get the layerId of the clicked shape, which we set to be the city name.
+    clicked_city <- input$map1_shape_click$id
+    
+    # Update the city selector dropdown to match the clicked city.
     updateSelectInput(session, "city_selector", selected = clicked_city)
   })
   
-  # --- Observe for City Selection ---
-  # This observer triggers whenever the user selects a new city from the dropdown.
-  # It uses leafletProxy to update the existing map instead of redrawing it,
-  # which is much more efficient.
-  observeEvent(input$city_select, {
-    # Find the selected city's data from the data frame
-    selected_city <- cityCentroid[cityCentroid$fullCity == input$city_select, ] |>
-      sf::st_coordinates()
-    # define lat lon values
-    longitude <- selected_city[1, "X"]
-    latitude <- selected_city[1, "Y"]
+  # This observer handles clicks on the city markers (when zoomed out)
+  observeEvent(input$map1_marker_click, {
+    # Ensure we are on page 1 and a marker was actually clicked
+    req(input$map1_marker_click, current_page() == "page1")
     
-    # Use a proxy to interact with the already-rendered map
-    leafletProxy("map1")
-      # Set the view to the selected city's coordinates with a closer zoom level
-      setView(lng = longitude, lat = latitude, zoom = 12)
+    # Get the layerId of the clicked marker, which we set to be the city name.
+    clicked_city <- input$map1_marker_click$id
     
+    # Update the city selector dropdown to match the clicked city.
+    updateSelectInput(session, "city_selector", selected = clicked_city)
   })
   
   
   
-
-  # render the text outputs  ------------------------------------------------
-  selectedData  <- reactive({cityDF |>
-    dplyr::filter(fullCity == input$city_selector)}) 
+  # --- Reactive data and text outputs ---
+  selectedData <- reactive({
+    req(input$city_selector)
+    cityDF %>% dplyr::filter(fullCity == input$city_selector)
+  })
   
-  output$population_output <- renderText({format(selectedData()$popOver20_2023,  big.mark = ",")}) 
-  output$ndvi_output <- renderText({round(selectedData()$meanNDVI, 2) }) 
-  output$rate_output <- renderText({paste0(round(selectedData()$mortalityRate,4))}) 
+  output$population_output <- renderText({ format(selectedData()$popOver20_2023, big.mark = ",") })
+  output$ndvi_output <- renderText({ round(selectedData()$meanNDVI, 2) })
+  output$LS_output <- renderText({ paste0(abs(round(selectedData()$ls_Mortality_Rate, 2))) })
+  output$SCP_output <- renderText({ paste0(abs(round(selectedData()$ls_Stroke_Rate, 2))) })
+  output$DCP_output <- renderText({ paste0(abs(round(selectedData()$ls_Dementia_Rate, 2))) })
   
-  # Render the dynamic bar graph for Page 1
+  # --- Bar graph rendering ---
   output$bar_graph <- renderPlotly({
-    # req(current_page() == "page1")
+    req(input$city_selector)
     
-    
-    # select the city and pull all values of interest 
-    selectedData1  <- cityDF |>
-      dplyr::filter(fullCity == input$city_selector) |>
-      # dplyr::filter(fullCity == "Madison city, Wisconsin") |>
-      dplyr::select(cityFormat, meanNDVI, popOver20_2023, mortalityRate, ls_Mortality, 
-                    ls_Mortality_low ,ls_Mortality_high,ls_Mortality10)
+    selectedData1 <- selectedData() %>%
+      dplyr::select(cityFormat, meanNDVI, popOver20_2023, mortalityRate, ls_Mortality,
+                    ls_Mortality_low, ls_Mortality_high, ls_Mortality10)
     
     data <- data.frame(
       Category = "Current Lives Saved",
@@ -319,95 +318,24 @@ server <- function(input, output, session) {
       fill_color = "#31a354"
     )
     if ("Low Confidence" %in% input$confidence_checkboxes) {
-      data <- rbind(
-        data,
-        data.frame(
-          Category = "Low Confidence",
-          Value = abs(selectedData1$ls_Mortality_low),
-          fill_color = "#78c679"
-        )
-      )
+      data <- rbind(data, data.frame(Category = "Low Confidence", Value = abs(selectedData1$ls_Mortality_low), fill_color = "#78c679"))
     }
     if ("High Confidence" %in% input$confidence_checkboxes) {
-      data <- rbind(
-        data,
-        data.frame(
-          Category = "High Confidence",
-          Value = abs(selectedData1$ls_Mortality_high),
-          fill_color = "#c2e699"
-        )
-      )
+      data <- rbind(data, data.frame(Category = "High Confidence", Value = abs(selectedData1$ls_Mortality_high), fill_color = "#c2e699"))
     }
     if ("10% Increase" %in% input$confidence_checkboxes) {
-      data <- rbind(
-        data,
-        data.frame(
-          Category = "10% Increase",
-          Value = abs(selectedData1$ls_Mortality10),
-          fill_color = "#006837"
-        )
-      )
+      data <- rbind(data, data.frame(Category = "10% Increase", Value = abs(selectedData1$ls_Mortality10), fill_color = "#006837"))
     }
-    # data$Category <- factor(
-    #   data$Category,
-    #   levels = c(
-    #     "Current Lives Saved",
-    #     "Low Confidence",
-    #     "High Confidence",
-    #     "10% Increase" 
-    #   )
-    # )
     
-    
-    plot_ly(
-      data = data,
-      x = ~Category,
-      y = ~Value,
-      color = ~I(fill_color),
-      type = "bar"
-    )|> layout(
-      title = paste0(selectedData1$cityFormat, "; 2023 population over 20: ", 
-                     format(selectedData1$popOver20_2023,  big.mark = ",")),
-      xaxis = list(title = NA), # How can we hide this title?
-      yaxis = list(title = "Lives Saved")      # How can we change this title?
-    )
-    
-    
-  })
-  
-  # Render the Plotly plots for Page 2
-  output$plotly_plot1 <- renderPlotly({
-    # req(current_page() == "page2")
-    plot_ly(
-      data = cities,
-      x = ~ name,
-      y = ~ bar_value,
-      type = "bar",
-      name = "Bar Value"
-    )
-  })
-  
-  output$plotly_plot2 <- renderPlotly({
-    # req(current_page() == "page2")
-    plot_ly(
-      data = cities,
-      labels = ~ name,
-      values = ~ bar_value,
-      type = "pie",
-      name = "Bar Value"
-    )
-  })
-  output$plotly_plot3 <- renderPlotly({
-    req(current_page() == "page2")
-    plot_ly(
-      data = cities,
-      labels = ~ name,
-      values = ~ bar_value,
-      type = "pie",
-      name = "Bar Value"
-    )
+    plot_ly(data = data, x = ~Category, y = ~Value, color = ~I(fill_color), type = "bar") %>%
+      layout(
+        title = list(text = paste0(selectedData1$cityFormat, "; Pop over 20: ", format(selectedData1$popOver20_2023, big.mark = ",")), font = list(size=10)),
+        xaxis = list(title = NA),
+        yaxis = list(title = "Lives Saved")
+      )
   })
 }
 
 # Run the application
 shinyApp(ui = ui, server = server)
+
