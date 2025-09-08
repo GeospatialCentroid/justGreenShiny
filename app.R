@@ -5,32 +5,22 @@ library(ggplot2)
 library(plotly)
 library(DT)
 library(shinyBS)
+library(RColorBrewer)
 
 # parameters and datasets -------------------------------------------------
-zoom_switch <- 9 
+zoom_switch <- 9
+circleRadius <- 10 
 # read in city object 
 cityGPKG <- sf::st_read("data/top200_simple.gpkg")
 cityDF <- as.data.frame(cityGPKG)
 cityCentroid <- sf::st_read("data/top200_centroid.gpkg")
+# source functions 
+source("functions/gaugeChart.R")
+
 
 ui <- fluidPage(
   # --- Custom CSS for banners and layout ---
-  # includeCSS("www/styles.css"), # Assuming you have a www/styles.css file
-  tags$head(
-    tags$style(HTML("
-      .sidebar-panel { padding: 15px; background-color: #f8f9fa; border-right: 1px solid #dee2e6; height: 100vh; }
-      .map-panel { padding: 0; }
-      .sidebar-title-banner { background-color: #006837; color: white; padding: 10px; text-align: center; font-size: 1.5em; }
-      .sidebar-bottom-banner { background-color: #f0f0f0; color: #333; padding: 5px; text-align: center; font-size: 0.8em; position: absolute; bottom: 0; width: 100%; left:0; }
-      .info-box { border: 1px solid #ddd; border-radius: 5px; padding: 10px; margin-top: 15px; margin-bottom: 15px; background-color: #ffffff; }
-      .tooltip-inner {
-          background-color: #006837; /* A dark green to match your theme */
-          color: #FFF; /* White text for contrast */
-          max-width: 500px; /* Adjust the maximum width */
-          text-align: center; /* Align text to the left if needed */}
-      .tooltip.right .tooltip-arrow { border-right-color: #006837;}
-    "))
-  ),
+  includeCSS("www/styles.css"),
   
   # --- UI defined with conditionalPanel instead of renderUI ---
   conditionalPanel(
@@ -41,12 +31,17 @@ ui <- fluidPage(
         width = 4,
         class = "sidebar-panel",
         div(class = "sidebar-title-banner", "JustGreen"),
-        p("Use the selectors below..."),
+        div(class = "info-box",
+            p(
+              "Use the selectors below to evaluate the average vegetation levels and related health impacts of the 200 most populated cities in the United States."
+            )
+        ),
         selectInput(
           "city_selector",
           "Select City:",
-          choices = c("Select a City" = "", sort(cityGPKG$fullCity)),
-          selected = ""
+          choices = c("Select a City" = "", 
+                      sort(cityGPKG$fullCity)),
+          selected = "Fort Collins city, Colorado"
         ),
         selectInput("map1_selector", 
                     "Health Benefit Selector:", 
@@ -59,7 +54,13 @@ ui <- fluidPage(
           div(id = "ndvi_info", tags$b("Current Vegetation Levels:"), textOutput("ndvi_output", inline = TRUE)),
           div(id = "ls_info", tags$b("Lives Saved:"), textOutput("LS_output", inline = TRUE)),
           div(id = "stroke_info", tags$b("Stroke Cases Prevented:"), textOutput("SCP_output", inline = TRUE)),
-          div(id = "deme_info", tags$b("Dementia Cases Prevented:"), textOutput("DCP_output", inline = TRUE))
+          div(id = "deme_info", tags$b("Dementia Cases Prevented:"), textOutput("DCP_output", inline = TRUE)), 
+          br(), 
+          div(
+            p("Population is derived from census data.", br(), 
+              "Vegetation level values and range from 0-1." , br(),
+              "Mortality, stroke, and dementia are all reported as rates normalizes to incidences per 100,000 people")
+          )
         ),
         shinyBS::bsTooltip(id = "pop_info", title = "Total population over the age of 20 for the selected city.", placement = "right", trigger = "hover"),
         shinyBS::bsTooltip(id = "ndvi_info", title = "Amount of vegetation measures by Normalized Difference Vegetation Index (NDVI)", placement = "right", trigger = "hover"),
@@ -67,28 +68,36 @@ ui <- fluidPage(
         shinyBS::bsTooltip(id = "stroke_info", title = "Stroke incidences per 100,000 prevented due to vegetation exposure.", placement = "right", trigger = "hover"),
         shinyBS::bsTooltip(id = "deme_info", title = "Dementia cases per 100,000 prevented due to vegetation exposure.", placement = "right", trigger = "hover"),
         
-        # checkboxGroupInput("confidence_checkboxes", "Confidence Level:", choices = c("Low Confidence", "High Confidence", "10% Increase")),
-        # div(class = "bar-graph-panel", h5("Estimated Lives Saved"), plotlyOutput("bar_graph", height = "200px")),
-        # div(style = "margin-top: 20px;", actionButton("to_page2", "Go to Census Tract", class = "btn-block btn-primary")),
-        # br(),
-        # div(style = "margin-top: 10px;", actionButton("to_page3", "About Page", class = "btn-block btn-primary")),
-        # div(class = "sidebar-bottom-banner", "Updated 08-2025")
+        # add in the figure here 
+        plotlyOutput("gauge_chart"),
+        actionButton("to_page2", "View Census Tract Details"),
+        actionButton("to_page3", "About Page")
+        
       ),
-      column(width = 8, class = "map-panel", leafletOutput("map1", height = "100vh"))
+      # location of the map element 
+      column(
+        style = "height: 90vh; overflow-y: auto;", # The key CSS
+        width = 8, class = "map-panel", leafletOutput("map1", height = "80vh"))
     )
   ),
   conditionalPanel(
     condition = "output.page_tracker == 'page2'",
     # UI for Page 2
     fluidRow(
-      column(12, h2("Page 2: Census Tract Summary"), actionButton("to_page1", "Back to City Summary"))
+      br(),
+      column(12, h2("Page 2: Census Tract Summary"), 
+        actionButton("to_page1", "Back to City Summary"),
+        actionButton("to_page3", "About Page")
+      )
     )
   ),
   conditionalPanel(
     condition = "output.page_tracker == 'page3'",
     # UI for Page 3
     fluidRow(
-      column(12, h2("Page 3: About Page"), actionButton("to_page1", "Back to City Summary"))
+      column(12, h2("Page 3: About Page"),
+             actionButton("to_page1", "Back to City Summary"),
+             actionButton("to_page2", "View Census Tract Details"))
     )
   )
 )
@@ -133,7 +142,7 @@ server <- function(input, output, session) {
       addCircleMarkers(
         data = cityCentroid,
         group = "cityPoints",
-        radius = 5,
+        radius = circleRadius,
         stroke = FALSE,
         layerId = ~fullCity, # Assign layerId for click events
         fillColor = ~pal1(meanNDVI),
@@ -189,7 +198,7 @@ server <- function(input, output, session) {
         data = cityCentroid,
         group = "cityPoints",
         layerId = ~fullCity,
-        radius = 5,
+        radius = circleRadius,
         stroke = FALSE,
         fillColor = ~current_pal(get(data_col)), # Use the selected palette and data
         fillOpacity = 0.8,
@@ -207,7 +216,7 @@ server <- function(input, output, session) {
         popup = ~popup,
         label = ~fullCity
       )
-  })
+  }, ignoreInit = TRUE)
     
     
   # --- Leaflet proxy for zoom switch ---
@@ -263,7 +272,7 @@ server <- function(input, output, session) {
         fillOpacity = 0 # Make it transparent so the original color shows through
       )
     }
-  })
+  }, ignoreInit = TRUE)
   
   
   # map click changes the side bar selector
@@ -305,34 +314,55 @@ server <- function(input, output, session) {
   output$DCP_output <- renderText({ paste0(abs(round(selectedData()$ls_Dementia_Rate, 2))) })
   
   # --- Bar graph rendering ---
-  output$bar_graph <- renderPlotly({
+  output$gauge_chart <- renderPlotly({
     req(input$city_selector)
     
-    selectedData1 <- selectedData() %>%
-      dplyr::select(cityFormat, meanNDVI, popOver20_2023, mortalityRate, ls_Mortality,
-                    ls_Mortality_low, ls_Mortality_high, ls_Mortality10)
+    allCitys <- cityDF |>
+      dplyr::select(cityFormat, meanNDVI, ls_Mortality_Rate, ls_Stroke_Rate, ls_Dementia_Rate)
     
-    data <- data.frame(
-      Category = "Current Lives Saved",
-      Value = abs(selectedData1$ls_Mortality),
-      fill_color = "#31a354"
+    selectedData1 <- selectedData() |>
+      dplyr::select(cityFormat, meanNDVI, ls_Mortality_Rate, ls_Stroke_Rate, ls_Dementia_Rate)
+    
+    
+    # coditional selection based on map visualization 
+    # Determine which palette and data to use
+    if (input$map1_selector == "Current Vegetation Levels") {
+      palette1 <- brewer.pal(n =9, name = "BuGn")
+      selectedRate <-  round(selectedData1$meanNDVI[1],2)
+      average_value <-  round(mean(allCitys$meanNDVI, na.rm = TRUE),2)
+      range_min <-  round(min(allCitys$meanNDVI, na.rm = TRUE),2)
+      range_max <-  round(max(allCitys$meanNDVI, na.rm = TRUE),2)
+    } else if (input$map1_selector == "Lives Saved") {
+      palette1 <- brewer.pal(n =9, name = "PuBuGn")
+      selectedRate <-  round(selectedData1$ls_Mortality_Rate[1],2)
+      average_value <- round(mean(allCitys$ls_Mortality_Rate, na.rm = TRUE),2)
+      range_min <-  round(min(allCitys$ls_Mortality_Rate, na.rm = TRUE),2)
+      range_max <-  round(max(allCitys$ls_Mortality_Rate, na.rm = TRUE),2)
+    } else if (input$map1_selector == "Stroke Cases Prevented") {
+      palette1 <- brewer.pal(n =9, name = "BuPu")
+      selectedRate <-  round(selectedData1$ls_Stroke_Rate[1],2)
+      average_value <-  round(mean(allCitys$ls_Stroke_Rate, na.rm = TRUE),2)
+      range_min <-  round(min(allCitys$ls_Stroke_Rate, na.rm = TRUE),2)
+      range_max <-  round(max(allCitys$ls_Stroke_Rate, na.rm = TRUE),2)
+    } else { # Default case: "Measured NDVI"
+      palette1 <- brewer.pal(n =9, name = "OrRd")
+      selectedRate <-  round(selectedData1$ls_Dementia_Rate[1],2)
+      average_value <-  round(mean(allCitys$ls_Dementia_Rate, na.rm = TRUE),2)
+      range_min <-  round(min(allCitys$ls_Dementia_Rate, na.rm = TRUE),2)
+      range_max <-  round(max(allCitys$ls_Dementia_Rate, na.rm = TRUE),2)
+    }
+  
+    
+    # generate the plot with NDVI values first 
+    create_gauge_chart(
+      city_name = selectedData1$cityFormat[1],
+      city_value = selectedRate,
+      average_value = average_value,
+      range_min = range_min,
+      range_max = range_max,
+      palette = palette1
     )
-    if ("Low Confidence" %in% input$confidence_checkboxes) {
-      data <- rbind(data, data.frame(Category = "Low Confidence", Value = abs(selectedData1$ls_Mortality_low), fill_color = "#78c679"))
-    }
-    if ("High Confidence" %in% input$confidence_checkboxes) {
-      data <- rbind(data, data.frame(Category = "High Confidence", Value = abs(selectedData1$ls_Mortality_high), fill_color = "#c2e699"))
-    }
-    if ("10% Increase" %in% input$confidence_checkboxes) {
-      data <- rbind(data, data.frame(Category = "10% Increase", Value = abs(selectedData1$ls_Mortality10), fill_color = "#006837"))
-    }
     
-    plot_ly(data = data, x = ~Category, y = ~Value, color = ~I(fill_color), type = "bar") %>%
-      layout(
-        title = list(text = paste0(selectedData1$cityFormat, "; Pop over 20: ", format(selectedData1$popOver20_2023, big.mark = ",")), font = list(size=10)),
-        xaxis = list(title = NA),
-        yaxis = list(title = "Lives Saved")
-      )
   })
 }
 

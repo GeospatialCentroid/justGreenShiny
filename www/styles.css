@@ -53,7 +53,7 @@
   border-right: 5px solid #E9762B50; /* Example: 5px solid black border on the right */
 }
 .map-panel {
-  padding: 0; /* Remove padding to make the map fill the container */
+  padding: 30; /* Remove padding to make the map fill the container */
 }
 /* Ensure the map fills its container and takes full vertical space */
 #map1 {
@@ -108,3 +108,24 @@
   color: #fff;
   background-color: #41644A80;
   border-color: #E9762B;
+}
+  
+/* additional css elements */ 
+.info-box {
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 10px;
+  margin-top: 15px;
+  margin-bottom: 15px;
+  background-color: #ffffff;
+  }
+  
+.tooltip-inner {
+  background-color: #006837; /* A dark green to match your theme */
+  color: #FFF; /* White text for contrast */
+  max-width: 500px; /* Adjust the maximum width */
+  text-align: center; /* Align text to the left if needed */
+}
+  
+.tooltip.right .tooltip-arrow { border-right-color: #006837;}
+  
