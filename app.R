@@ -12,118 +12,59 @@ zoom_switch <- 9
 circleRadius <- 10 
 # read in city object 
 cityGPKG <- sf::st_read("data/top200_simple.gpkg")
-cityDF <- as.data.frame(cityGPKG)
+cityDF <- read.csv("data/top200.csv")
 cityCentroid <- sf::st_read("data/top200_centroid.gpkg")
 # source functions 
 source("functions/gaugeChart.R")
 
 
-ui <- bslib::page_sidebar(
+ui <- fluidPage(
   # --- Custom CSS for banners and layout ---
   includeCSS("www/styles.css"),
-  title = "JustGreen",
-
-  # sidebar element  --------------------------------------------------------
-  sidebar = sidebar(
-    title = "Controls",
-    p(
-      "Use the selectors below to evaluate the average vegetation levels and related health impacts of the 200 most populated cities in the United States."
-    ),
-    selectInput(
-      "city_selector",
-      "Select City:",
-      choices = c("Select a City" = "", 
-                  sort(cityGPKG$fullCity)),
-      selected = "Fort Collins city, Colorado"
-    ),
-    selectInput("map1_selector", 
-                "Health Benefit Selector:", 
-                choices = c("Current Vegetation Levels",
-                            "Lives Saved",
-                            "Stroke Cases Prevented",
-                            "Dementia Cases Prevented")),
-    div(class = "info-box",
-        div(id = "pop_info",tags$b("Population Over 20: "), textOutput("population_output", inline = TRUE)),
-        div(id = "ndvi_info", tags$b("Current Vegetation Levels:"), textOutput("ndvi_output", inline = TRUE)),
-        div(id = "ls_info", tags$b("Lives Saved:"), textOutput("LS_output", inline = TRUE)),
-        div(id = "stroke_info", tags$b("Stroke Cases Prevented:"), textOutput("SCP_output", inline = TRUE)),
-        div(id = "deme_info", tags$b("Dementia Cases Prevented:"), textOutput("DCP_output", inline = TRUE)), 
-        br(), 
-        div(
-          p("Population is derived from census data.", br(), 
-            "Vegetation level values and range from 0-1." , br(),
-            "Mortality, stroke, and dementia are all reported as rates normalizes to incidences per 100,000 people")
-        )
-    ),
-    plotlyOutput("gauge_chart"),
-    actionButton("to_page2", "View Census Tract Details"),
-    actionButton("to_page3", "About Page")
-  ),
-  
-  
-  
-  # --- UI defined with conditionalPanel instead of renderUI ---
+  # page 1  -----------------------------------------------------------------
   conditionalPanel(
     condition = "output.page_tracker == 'page1'",
-    # UI for Page 1: Map and Controls
-    # fluidRow(
-    #   column(
-    #     width = 4,
-    #     class = "sidebar-panel",
-    #     div(class = "sidebar-title-banner", "JustGreen"),
-    #     div(class = "info-box",
-    #         p(
-    #           "Use the selectors below to evaluate the average vegetation levels and related health impacts of the 200 most populated cities in the United States."
-    #         )
-    #     ),
-    #     selectInput(
-    #       "city_selector",
-    #       "Select City:",
-    #       choices = c("Select a City" = "", 
-    #                   sort(cityGPKG$fullCity)),
-    #       selected = "Fort Collins city, Colorado"
-    #     ),
-    #     selectInput("map1_selector", 
-    #                 "Health Benefit Selector:", 
-    #                 choices = c("Current Vegetation Levels",
-    #                             "Lives Saved",
-    #                             "Stroke Cases Prevented",
-    #                             "Dementia Cases Prevented")),
-    #     div(class = "info-box",
-    #       div(id = "pop_info",tags$b("Population Over 20: "), textOutput("population_output", inline = TRUE)),
-    #       div(id = "ndvi_info", tags$b("Current Vegetation Levels:"), textOutput("ndvi_output", inline = TRUE)),
-    #       div(id = "ls_info", tags$b("Lives Saved:"), textOutput("LS_output", inline = TRUE)),
-    #       div(id = "stroke_info", tags$b("Stroke Cases Prevented:"), textOutput("SCP_output", inline = TRUE)),
-    #       div(id = "deme_info", tags$b("Dementia Cases Prevented:"), textOutput("DCP_output", inline = TRUE)), 
-    #       br(), 
-    #       div(
-    #         p("Population is derived from census data.", br(), 
-    #           "Vegetation level values and range from 0-1." , br(),
-    #           "Mortality, stroke, and dementia are all reported as rates normalizes to incidences per 100,000 people")
-    #       )
-    #     ),
-    #     shinyBS::bsTooltip(id = "pop_info", title = "Total population over the age of 20 for the selected city.", placement = "right", trigger = "hover"),
-    #     shinyBS::bsTooltip(id = "ndvi_info", title = "Amount of vegetation measures by Normalized Difference Vegetation Index (NDVI)", placement = "right", trigger = "hover"),
-    #     shinyBS::bsTooltip(id = "ls_info", title = "Lives per 100,000 saved due to vegetation exposure.", placement = "right", trigger = "hover"),
-    #     shinyBS::bsTooltip(id = "stroke_info", title = "Stroke incidences per 100,000 prevented due to vegetation exposure.", placement = "right", trigger = "hover"),
-    #     shinyBS::bsTooltip(id = "deme_info", title = "Dementia cases per 100,000 prevented due to vegetation exposure.", placement = "right", trigger = "hover"),
-    #     
-    #     # add in the figure here 
-    #     plotlyOutput("gauge_chart"),
-    #     actionButton("to_page2", "View Census Tract Details"),
-    #     actionButton("to_page3", "About Page")
-    #     
-    #   ),
-      # location of the map element 
+    page_sidebar(
+      sidebar = sidebar(
+        title = "National Level Trends",
+        width = "25%",
+        p("Use the selectors below to evaluate the average vegetation levels and related health impacts of the 200 most populated cities in the United States."),
+        selectInput(
+          "city_selector",
+          "Select City:",
+          choices = c("Select a City" = "", 
+                      sort(cityGPKG$fullCity)),
+          selected = ""
+        ),
+        selectInput("map1_selector", 
+                    "Health Benefit Selector:", 
+                    choices = c("Current Vegetation Levels",
+                                "Lives Saved",
+                                "Stroke Cases Prevented",
+                                "Dementia Cases Prevented")),
+        div(class = "info-box",
+            # Replace textOutput with uiOutput for dynamic content
+            div(id = "ndvi_info", tags$b("Current Vegetation Levels:"), uiOutput("ndvi_comp_output")),
+            div(id = "ls_info", tags$b("Lives Saved:"), uiOutput("ls_comp_output")),
+            div(id = "stroke_info", tags$b("Stroke Cases Prevented:"), uiOutput("scp_comp_output")),
+            div(id = "deme_info", tags$b("Dementia Cases Prevented:"), uiOutput("dcp_comp_output"))
+        ),
+        plotlyOutput("gauge_chart"),
+        actionButton("to_page2", "View Census Tract Details"),
+        actionButton("to_page3", "About Page")
+        ),
+      # Main content for Page 1
       card(
-        card_header("testing"),
-        card_body(leafletOutput("map1", height = "80vh"))
+        full_screen = TRUE,
+        card_header("City Health & Vegetation Map"),
+        leafletOutput("map1", height = "85vh") 
       )
-    #   column(
-    #     style = "height: 90vh; overflow-y: auto;", # The key CSS
-    #     width = 8, class = "map-panel", leafletOutput("map1", height = "80vh"))
-    # )
+    )
   ),
+
+  
+  # --- UI defined with conditionalPanel instead of renderUI ---
+ 
   conditionalPanel(
     condition = "output.page_tracker == 'page2'",
     # UI for Page 2
@@ -170,11 +111,11 @@ server <- function(input, output, session) {
   # Palette for mean NDVI 
   pal1 <- colorNumeric(palette = "BuGn", domain = as.numeric(cityGPKG$meanNDVI))
   # palette for lives saved 
-  pal2 <- colorNumeric(palette = "PuBuGn", domain = as.numeric(cityGPKG$ls_Mortality_Rate) , reverse = TRUE)
+  pal2 <- colorNumeric(palette = "PuBuGn", domain = as.numeric(cityGPKG$ls_Mortality_Rate))
   # palette for stroke cases reduced 
-  pal3 <- colorNumeric(palette = "BuPu", domain = as.numeric(cityGPKG$ls_Stroke_Rate) , reverse = TRUE)
+  pal3 <- colorNumeric(palette = "BuPu", domain = as.numeric(cityGPKG$ls_Stroke_Rate))
   # palette for demetia cases reduced 
-  pal4 <- colorNumeric(palette = "OrRd", domain = as.numeric(cityGPKG$ls_Dementia_Rate) , reverse = TRUE)
+  pal4 <- colorNumeric(palette = "OrRd", domain = as.numeric(cityGPKG$ls_Dementia_Rate))
   
   # Render the leaflet map for Page 1
   output$map1 <- renderLeaflet({
@@ -350,64 +291,113 @@ server <- function(input, output, session) {
     req(input$city_selector)
     cityDF %>% dplyr::filter(fullCity == input$city_selector)
   })
+  natData <- reactive({
+    cityDF |> 
+      dplyr::filter(fullCity == "all cities")
+  })
   
-  output$population_output <- renderText({ format(selectedData()$popOver20_2023, big.mark = ",") })
-  output$ndvi_output <- renderText({ round(selectedData()$meanNDVI, 2) })
-  output$LS_output <- renderText({ paste0(abs(round(selectedData()$ls_Mortality_Rate, 2))) })
-  output$SCP_output <- renderText({ paste0(abs(round(selectedData()$ls_Stroke_Rate, 2))) })
-  output$DCP_output <- renderText({ paste0(abs(round(selectedData()$ls_Dementia_Rate, 2))) })
+  
+  # --- NEW: UI Outputs for Comparison Text ---
+  output$ndvi_comp_output <- renderUI({
+    nat_avg_str <- paste0("National Avg: ", round(natData()$meanNDVI,2))
+    if (input$city_selector != "") {
+      city_val <- round(selectedData()$meanNDVI, 2)
+      HTML(paste(nat_avg_str, "|", "Selected City:", city_val))
+    } else {
+      HTML(nat_avg_str)
+    }
+  })
+  
+  output$ls_comp_output <- renderUI({
+    nat_avg_str <- paste0("National Avg: ", round(natData()$ls_Mortality_Rate,2))
+    if (input$city_selector != "") {
+      city_val <- abs(round(selectedData()$ls_Mortality_Rate, 2))
+      HTML(paste(nat_avg_str, "|", "Selected City:", city_val))
+    } else {
+      HTML(nat_avg_str)
+    }
+  })
+  
+  output$scp_comp_output <- renderUI({
+    nat_avg_str <- paste0("National Avg: ", round(natData()$ls_Stroke_Rate,2))
+    if (input$city_selector != "") {
+      city_val <- abs(round(selectedData()$ls_Stroke_Rate, 2))
+      HTML(paste(nat_avg_str, "|", "Selected City:", city_val))
+    } else {
+      HTML(nat_avg_str)
+    }
+  })
+  
+  output$dcp_comp_output <- renderUI({
+    nat_avg_str <- paste0("National Avg: ", round(natData()$ls_Dementia_Rate,2))
+    if (input$city_selector != "") {
+      city_val <- abs(round(selectedData()$ls_Dementia_Rate, 2))
+      HTML(paste(nat_avg_str, "|", "Selected City:", city_val))
+    } else {
+      HTML(nat_avg_str)
+    }
+  })
+  
+  
+  
+  # output$population_output <- renderText({ format(selectedData()$popOver20_2023, big.mark = ",") })
+  # output$ndvi_output <- renderText({ round(selectedData()$meanNDVI, 2) })
+  # output$LS_output <- renderText({ paste0(abs(round(selectedData()$ls_Mortality_Rate, 2))) })
+  # output$SCP_output <- renderText({ paste0(abs(round(selectedData()$ls_Stroke_Rate, 2))) })
+  # output$DCP_output <- renderText({ paste0(abs(round(selectedData()$ls_Dementia_Rate, 2))) })
   
   # --- Bar graph rendering ---
-  output$gauge_chart <- renderPlotly({
-    req(input$city_selector)
-    
-    allCitys <- cityDF |>
-      dplyr::select(cityFormat, meanNDVI, ls_Mortality_Rate, ls_Stroke_Rate, ls_Dementia_Rate)
-    
-    selectedData1 <- selectedData() |>
-      dplyr::select(cityFormat, meanNDVI, ls_Mortality_Rate, ls_Stroke_Rate, ls_Dementia_Rate)
-    
-    
-    # coditional selection based on map visualization 
-    # Determine which palette and data to use
-    if (input$map1_selector == "Current Vegetation Levels") {
-      palette1 <- brewer.pal(n =9, name = "BuGn")
-      selectedRate <-  round(selectedData1$meanNDVI[1],2)
-      average_value <-  round(mean(allCitys$meanNDVI, na.rm = TRUE),2)
-      range_min <-  round(min(allCitys$meanNDVI, na.rm = TRUE),2)
-      range_max <-  round(max(allCitys$meanNDVI, na.rm = TRUE),2)
-    } else if (input$map1_selector == "Lives Saved") {
-      palette1 <- brewer.pal(n =9, name = "PuBuGn")
-      selectedRate <-  round(selectedData1$ls_Mortality_Rate[1],2)
-      average_value <- round(mean(allCitys$ls_Mortality_Rate, na.rm = TRUE),2)
-      range_min <-  round(min(allCitys$ls_Mortality_Rate, na.rm = TRUE),2)
-      range_max <-  round(max(allCitys$ls_Mortality_Rate, na.rm = TRUE),2)
-    } else if (input$map1_selector == "Stroke Cases Prevented") {
-      palette1 <- brewer.pal(n =9, name = "BuPu")
-      selectedRate <-  round(selectedData1$ls_Stroke_Rate[1],2)
-      average_value <-  round(mean(allCitys$ls_Stroke_Rate, na.rm = TRUE),2)
-      range_min <-  round(min(allCitys$ls_Stroke_Rate, na.rm = TRUE),2)
-      range_max <-  round(max(allCitys$ls_Stroke_Rate, na.rm = TRUE),2)
-    } else { # Default case: "Measured NDVI"
-      palette1 <- brewer.pal(n =9, name = "OrRd")
-      selectedRate <-  round(selectedData1$ls_Dementia_Rate[1],2)
-      average_value <-  round(mean(allCitys$ls_Dementia_Rate, na.rm = TRUE),2)
-      range_min <-  round(min(allCitys$ls_Dementia_Rate, na.rm = TRUE),2)
-      range_max <-  round(max(allCitys$ls_Dementia_Rate, na.rm = TRUE),2)
-    }
-  
-    
-    # generate the plot with NDVI values first 
-    create_gauge_chart(
-      city_name = selectedData1$cityFormat[1],
-      city_value = selectedRate,
-      average_value = average_value,
-      range_min = range_min,
-      range_max = range_max,
-      palette = palette1
-    )
-    
-  })
+  # output$gauge_chart <- renderPlotly({
+  #   req(input$city_selector)
+  #   
+  #   allCitys <- cityGPKG |>
+  #     as.data.frame()|>
+  #     dplyr::select(cityFormat, meanNDVI, ls_Mortality_Rate, ls_Stroke_Rate, ls_Dementia_Rate)
+  #   
+  #   selectedData1 <- selectedData() |>
+  #     dplyr::select(cityFormat, meanNDVI, ls_Mortality_Rate, ls_Stroke_Rate, ls_Dementia_Rate)
+  #   
+  #   
+  #   # coditional selection based on map visualization 
+  #   # Determine which palette and data to use
+  #   if (input$map1_selector == "Current Vegetation Levels") {
+  #     palette1 <- brewer.pal(n =9, name = "BuGn")
+  #     selectedRate <-  round(selectedData1$meanNDVI[1],2)
+  #     average_value <-  round(mean(allCitys$meanNDVI, na.rm = TRUE),2)
+  #     range_min <-  round(min(allCitys$meanNDVI, na.rm = TRUE),2)
+  #     range_max <-  round(max(allCitys$meanNDVI, na.rm = TRUE),2)
+  #   } else if (input$map1_selector == "Lives Saved") {
+  #     palette1 <- brewer.pal(n =9, name = "PuBuGn")
+  #     selectedRate <-  round(selectedData1$ls_Mortality_Rate[1],2)
+  #     average_value <- round(mean(allCitys$ls_Mortality_Rate, na.rm = TRUE),2)
+  #     range_min <-  round(min(allCitys$ls_Mortality_Rate, na.rm = TRUE),2)
+  #     range_max <-  round(max(allCitys$ls_Mortality_Rate, na.rm = TRUE),2)
+  #   } else if (input$map1_selector == "Stroke Cases Prevented") {
+  #     palette1 <- brewer.pal(n =9, name = "BuPu")
+  #     selectedRate <-  round(selectedData1$ls_Stroke_Rate[1],2)
+  #     average_value <-  round(mean(allCitys$ls_Stroke_Rate, na.rm = TRUE),2)
+  #     range_min <-  round(min(allCitys$ls_Stroke_Rate, na.rm = TRUE),2)
+  #     range_max <-  round(max(allCitys$ls_Stroke_Rate, na.rm = TRUE),2)
+  #   } else { # Default case: "Measured NDVI"
+  #     palette1 <- brewer.pal(n =9, name = "OrRd")
+  #     selectedRate <-  round(selectedData1$ls_Dementia_Rate[1],2)
+  #     average_value <-  round(mean(allCitys$ls_Dementia_Rate, na.rm = TRUE),2)
+  #     range_min <-  round(min(allCitys$ls_Dementia_Rate, na.rm = TRUE),2)
+  #     range_max <-  round(max(allCitys$ls_Dementia_Rate, na.rm = TRUE),2)
+  #   }
+  # 
+  #   
+  #   # generate the plot with NDVI values first 
+  #   create_gauge_chart(
+  #     city_name = selectedData1$cityFormat[1],
+  #     city_value = selectedRate,
+  #     average_value = average_value,
+  #     range_min = range_min,
+  #     range_max = range_max,
+  #     palette = palette1
+  #   )
+  #   
+  # })
 }
 
 # Run the application

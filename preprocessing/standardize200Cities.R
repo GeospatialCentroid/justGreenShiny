@@ -18,6 +18,41 @@ c1 <- c1 |>
     cityFormat = trimws(gsub("CDP|City", "", city)),
     fullCity = paste0(cityFormat, ", ",state)
   )
+# fitler to the columns needed by the application 
+c1 <- c1 |>
+  dplyr::select(
+    fullCity,
+    meanNDVI,
+    ls_Mortality_Rate,
+    ls_Stroke_Rate,
+    ls_Dementia_Rate,
+    popOver20_2023,
+    popOver35_2023,
+    popOver55_2023,
+    geoid,
+    city,
+    state,
+    countyGEOID ,
+    standardDevNDVI
+  )
+# gather average values 
+allCities <- data.frame(
+  fullCity = "all cities",
+  meanNDVI = mean(c1$meanNDVI, na.rm = TRUE),
+  ls_Mortality_Rate = abs(mean(c1$ls_Mortality_Rate, na.rm = TRUE)),
+  ls_Stroke_Rate= abs(mean(c1$ls_Stroke_Rate, na.rm = TRUE)),
+  ls_Dementia_Rate= abs(mean(c1$ls_Dementia_Rate, na.rm = TRUE)),
+  popOver20_2023= sum(c1$popOver20_2023, na.rm = TRUE),
+  popOver35_2023= sum(c1$popOver35_2023, na.rm = TRUE),
+  popOver55_2023= sum(c1$popOver55_2023, na.rm = TRUE),
+  geoid = NA,
+  city = "all cities",
+  state = NA, 
+  countyGEOID = NA,
+  standardDevNDVI = mean(c1$standardDevNDVI, na.rm = TRUE)
+)
+
+
 
 # filter names 
 s2 <- s1 |>
@@ -32,9 +67,16 @@ s2 <- s1 |>
 # possible due from generating this data from a CSV.... 
 
 # join 
-s3 <- dplyr::left_join(x = s2, y = c1 , by = c("GEOID" = "geoid"))
+s3 <- dplyr::left_join(x = s2, y = c1 , by = c("GEOID" = "geoid"))|>
+  dplyr::mutate(
+    ls_Mortality_Rate = abs(ls_Mortality_Rate),
+    ls_Stroke_Rate = abs(ls_Stroke_Rate),
+    ls_Dementia_Rate = abs(ls_Dementia_Rate)
+  )
 View(s3)
 qtm(s3)
+
+
 
 # assign the popup elements 
 s3$popup <- paste0(
@@ -51,4 +93,10 @@ cityCentroid <- sf::st_centroid(s3)
 # export 
 st_write(obj = s3, dsn = "data/top200_simple.gpkg", delete_layer = TRUE)
 st_write(obj = cityCentroid, dsn = "data/top200_centroid.gpkg", delete_layer = TRUE)
+
+# generate a non spatial object for selection 
+# bind in the all cities data 
+s4 <- bind_rows(as.data.frame(s3), allCities) |>
+  dplyr::select(names(allCities))
+readr::write_csv(s4, "data/top200.csv")
 
