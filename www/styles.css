@@ -56,14 +56,16 @@
   padding: 30; /* Remove padding to make the map fill the container */
 }
 /* Ensure the map fills its container and takes full vertical space */
+/*
 #map1 {
-  height: 100vh !important;
+  height: 90vh !important;
   border-radius: 5px;
 }
 #my_map2 {
   height: 55vh !important;
   border-radius: 5px;
 }
+*/
 .bar-graph-panel {
   padding: 5px;
   background-color: #F1F0E9;

@@ -18,76 +18,120 @@ cityCentroid <- sf::st_read("data/top200_centroid.gpkg")
 source("functions/gaugeChart.R")
 
 
-ui <- fluidPage(
+ui <- bslib::page_sidebar(
   # --- Custom CSS for banners and layout ---
   includeCSS("www/styles.css"),
+  title = "JustGreen",
+
+  # sidebar element  --------------------------------------------------------
+  sidebar = sidebar(
+    title = "Controls",
+    p(
+      "Use the selectors below to evaluate the average vegetation levels and related health impacts of the 200 most populated cities in the United States."
+    ),
+    selectInput(
+      "city_selector",
+      "Select City:",
+      choices = c("Select a City" = "", 
+                  sort(cityGPKG$fullCity)),
+      selected = "Fort Collins city, Colorado"
+    ),
+    selectInput("map1_selector", 
+                "Health Benefit Selector:", 
+                choices = c("Current Vegetation Levels",
+                            "Lives Saved",
+                            "Stroke Cases Prevented",
+                            "Dementia Cases Prevented")),
+    div(class = "info-box",
+        div(id = "pop_info",tags$b("Population Over 20: "), textOutput("population_output", inline = TRUE)),
+        div(id = "ndvi_info", tags$b("Current Vegetation Levels:"), textOutput("ndvi_output", inline = TRUE)),
+        div(id = "ls_info", tags$b("Lives Saved:"), textOutput("LS_output", inline = TRUE)),
+        div(id = "stroke_info", tags$b("Stroke Cases Prevented:"), textOutput("SCP_output", inline = TRUE)),
+        div(id = "deme_info", tags$b("Dementia Cases Prevented:"), textOutput("DCP_output", inline = TRUE)), 
+        br(), 
+        div(
+          p("Population is derived from census data.", br(), 
+            "Vegetation level values and range from 0-1." , br(),
+            "Mortality, stroke, and dementia are all reported as rates normalizes to incidences per 100,000 people")
+        )
+    ),
+    plotlyOutput("gauge_chart"),
+    actionButton("to_page2", "View Census Tract Details"),
+    actionButton("to_page3", "About Page")
+  ),
+  
+  
   
   # --- UI defined with conditionalPanel instead of renderUI ---
   conditionalPanel(
     condition = "output.page_tracker == 'page1'",
     # UI for Page 1: Map and Controls
-    fluidRow(
-      column(
-        width = 4,
-        class = "sidebar-panel",
-        div(class = "sidebar-title-banner", "JustGreen"),
-        div(class = "info-box",
-            p(
-              "Use the selectors below to evaluate the average vegetation levels and related health impacts of the 200 most populated cities in the United States."
-            )
-        ),
-        selectInput(
-          "city_selector",
-          "Select City:",
-          choices = c("Select a City" = "", 
-                      sort(cityGPKG$fullCity)),
-          selected = "Fort Collins city, Colorado"
-        ),
-        selectInput("map1_selector", 
-                    "Health Benefit Selector:", 
-                    choices = c("Current Vegetation Levels",
-                                "Lives Saved",
-                                "Stroke Cases Prevented",
-                                "Dementia Cases Prevented")),
-        div(class = "info-box",
-          div(id = "pop_info",tags$b("Population Over 20: "), textOutput("population_output", inline = TRUE)),
-          div(id = "ndvi_info", tags$b("Current Vegetation Levels:"), textOutput("ndvi_output", inline = TRUE)),
-          div(id = "ls_info", tags$b("Lives Saved:"), textOutput("LS_output", inline = TRUE)),
-          div(id = "stroke_info", tags$b("Stroke Cases Prevented:"), textOutput("SCP_output", inline = TRUE)),
-          div(id = "deme_info", tags$b("Dementia Cases Prevented:"), textOutput("DCP_output", inline = TRUE)), 
-          br(), 
-          div(
-            p("Population is derived from census data.", br(), 
-              "Vegetation level values and range from 0-1." , br(),
-              "Mortality, stroke, and dementia are all reported as rates normalizes to incidences per 100,000 people")
-          )
-        ),
-        shinyBS::bsTooltip(id = "pop_info", title = "Total population over the age of 20 for the selected city.", placement = "right", trigger = "hover"),
-        shinyBS::bsTooltip(id = "ndvi_info", title = "Amount of vegetation measures by Normalized Difference Vegetation Index (NDVI)", placement = "right", trigger = "hover"),
-        shinyBS::bsTooltip(id = "ls_info", title = "Lives per 100,000 saved due to vegetation exposure.", placement = "right", trigger = "hover"),
-        shinyBS::bsTooltip(id = "stroke_info", title = "Stroke incidences per 100,000 prevented due to vegetation exposure.", placement = "right", trigger = "hover"),
-        shinyBS::bsTooltip(id = "deme_info", title = "Dementia cases per 100,000 prevented due to vegetation exposure.", placement = "right", trigger = "hover"),
-        
-        # add in the figure here 
-        plotlyOutput("gauge_chart"),
-        actionButton("to_page2", "View Census Tract Details"),
-        actionButton("to_page3", "About Page")
-        
-      ),
+    # fluidRow(
+    #   column(
+    #     width = 4,
+    #     class = "sidebar-panel",
+    #     div(class = "sidebar-title-banner", "JustGreen"),
+    #     div(class = "info-box",
+    #         p(
+    #           "Use the selectors below to evaluate the average vegetation levels and related health impacts of the 200 most populated cities in the United States."
+    #         )
+    #     ),
+    #     selectInput(
+    #       "city_selector",
+    #       "Select City:",
+    #       choices = c("Select a City" = "", 
+    #                   sort(cityGPKG$fullCity)),
+    #       selected = "Fort Collins city, Colorado"
+    #     ),
+    #     selectInput("map1_selector", 
+    #                 "Health Benefit Selector:", 
+    #                 choices = c("Current Vegetation Levels",
+    #                             "Lives Saved",
+    #                             "Stroke Cases Prevented",
+    #                             "Dementia Cases Prevented")),
+    #     div(class = "info-box",
+    #       div(id = "pop_info",tags$b("Population Over 20: "), textOutput("population_output", inline = TRUE)),
+    #       div(id = "ndvi_info", tags$b("Current Vegetation Levels:"), textOutput("ndvi_output", inline = TRUE)),
+    #       div(id = "ls_info", tags$b("Lives Saved:"), textOutput("LS_output", inline = TRUE)),
+    #       div(id = "stroke_info", tags$b("Stroke Cases Prevented:"), textOutput("SCP_output", inline = TRUE)),
+    #       div(id = "deme_info", tags$b("Dementia Cases Prevented:"), textOutput("DCP_output", inline = TRUE)), 
+    #       br(), 
+    #       div(
+    #         p("Population is derived from census data.", br(), 
+    #           "Vegetation level values and range from 0-1." , br(),
+    #           "Mortality, stroke, and dementia are all reported as rates normalizes to incidences per 100,000 people")
+    #       )
+    #     ),
+    #     shinyBS::bsTooltip(id = "pop_info", title = "Total population over the age of 20 for the selected city.", placement = "right", trigger = "hover"),
+    #     shinyBS::bsTooltip(id = "ndvi_info", title = "Amount of vegetation measures by Normalized Difference Vegetation Index (NDVI)", placement = "right", trigger = "hover"),
+    #     shinyBS::bsTooltip(id = "ls_info", title = "Lives per 100,000 saved due to vegetation exposure.", placement = "right", trigger = "hover"),
+    #     shinyBS::bsTooltip(id = "stroke_info", title = "Stroke incidences per 100,000 prevented due to vegetation exposure.", placement = "right", trigger = "hover"),
+    #     shinyBS::bsTooltip(id = "deme_info", title = "Dementia cases per 100,000 prevented due to vegetation exposure.", placement = "right", trigger = "hover"),
+    #     
+    #     # add in the figure here 
+    #     plotlyOutput("gauge_chart"),
+    #     actionButton("to_page2", "View Census Tract Details"),
+    #     actionButton("to_page3", "About Page")
+    #     
+    #   ),
       # location of the map element 
-      column(
-        style = "height: 90vh; overflow-y: auto;", # The key CSS
-        width = 8, class = "map-panel", leafletOutput("map1", height = "80vh"))
-    )
+      card(
+        card_header("testing"),
+        card_body(leafletOutput("map1", height = "80vh"))
+      )
+    #   column(
+    #     style = "height: 90vh; overflow-y: auto;", # The key CSS
+    #     width = 8, class = "map-panel", leafletOutput("map1", height = "80vh"))
+    # )
   ),
   conditionalPanel(
     condition = "output.page_tracker == 'page2'",
     # UI for Page 2
     fluidRow(
-      br(),
-      column(12, h2("Page 2: Census Tract Summary"), 
-        actionButton("to_page1", "Back to City Summary"),
-        actionButton("to_page3", "About Page")
+        br(),
+        column(12, h2("Page 2: Census Tract Summary"), 
+               actionButton("to_page1", "Back to City Summary"),
+               actionButton("to_page3", "About Page")
       )
     )
   ),
@@ -98,9 +142,9 @@ ui <- fluidPage(
       column(12, h2("Page 3: About Page"),
              actionButton("to_page1", "Back to City Summary"),
              actionButton("to_page2", "View Census Tract Details"))
+      )
     )
   )
-)
 
 
 # Server ------------------------------------------------------------------

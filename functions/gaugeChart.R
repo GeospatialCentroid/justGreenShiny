@@ -43,6 +43,7 @@ create_gauge_chart <- function(city_name, city_value, average_value, range_min, 
     mode = "gauge",
     value = city_value, # This value is used for the gauge background fill
     gauge = list(
+      shape = "bullet",  # This is the key argument for a horizontal gauge
       axis = list(
         range = list(range_min, range_max),
         tickwidth = 0, # Hide ticks
