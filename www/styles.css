@@ -131,3 +131,21 @@
   
 .tooltip.right .tooltip-arrow { border-right-color: #006837;}
   
+/* Style for the fixed footer banner */
+.footer-banner {
+  position: relative;   /* Fixes the position relative to the browser window */
+  left: 0;
+  bottom: 0;         /* Aligns the banner to the bottom */
+  width: 100%;       /* Makes the banner span the full width */
+  background-color: #006837; /* Example background color (Bootstrap primary) */
+  color: white;      /* Text color */
+  text-align: center;/* Center the text inside the banner */
+  padding: 10px;     /* Add some space inside the banner */
+  /*z-index: -9999;     /* Ensures the banner stays on top of other content */
+  /* --- CSS Flexbox properties for alignment --- */
+  display: flex;                  /* Activates flexbox layout */
+  justify-content: space-between; /* Pushes items to opposite ends (left and right) */
+  align-items: center;            /* Vertically centers the items in the banner */
+  padding: 5px 20px;              /* Adjust padding (top/bottom and left/right) */
+
+}
