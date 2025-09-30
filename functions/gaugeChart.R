@@ -52,7 +52,6 @@ gaugePlot <- function(selectedRate, valueRange, colorPalette, title = "NDVI", he
       ),
       height = height,
       # width = width,
-      
       # --- CHANGE 2: Reduce the top margin for a tighter fit ---
       margin = list(t = 40, b = 40) # Was t = 80
     )

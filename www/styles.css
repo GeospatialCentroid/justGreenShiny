@@ -1,151 +1,182 @@
+/* --- 
+Altered styles to match the design language of style_docs.css
+Key Changes:
+- Font updated to 'Poppins'
+- Color palette switched to CSU Green and Gold
+- Panels and cards updated to a white background with box-shadow for depth
+- Added consistent styling for headings, links, and tables.
+--- */
 
-/*
-#F1F0E9 grey 
-#41644A light green 
-#0D4715 dark green 
-#E9762B orange 
-*/
+/* 1. Define the local font source (copied from style_docs.css) */
+@font-face {
+  font-family: 'Poppins';
+  src: url('Poppins-Regular.ttf') format('truetype'); /* Ensure this path is correct */
+  font-weight: normal;
+  font-style: normal;
+}
 
-
-.body {
-  font-family: 'Arial', sans-serif;
-  padding: 0;
+/* 2. Apply global styles to the body */
+body {
+  font-family: 'Poppins', Arial, sans-serif; /* Changed from Arial to Poppins */
+  background-color: #f5f5f5; /* Light grey background from style_docs.css */
+  color: #333; /* Default dark text color */
+  line-height: 1.6;
   margin: 0;
+  padding: 0; /* Changed from original to allow full-width elements */
 }
 
+/* --- Banners --- */
 .sidebar-title-banner {
-  background-color: #0D4715;
-  color: #F1F0E9;
-  padding: 15px;
+  background-color: #1E4D2B; /* CSU Green */
+  color: #FFFFFF; /* White text for contrast */
+  padding: 20px 30px;
   text-align: center;
-  font-size: 1.5em;
-  font-weight: bold;
-  border-radius: 5px;
+  font-size: 1.8em;
+  font-weight: 700; /* Bolder for emphasis */
   margin-bottom: 20px;
+  border-radius: 5px 5px 0 0; /* Match top-banner style */
 }
-.sidebar-bottom-banner {
-  background-color: #41644A80;
-  color: #F1F0E9;
-  padding: 5px;
+
+.sidebar-bottom-banner, .page-bottom-banner {
+  background-color: #1E4D2B; /* CSU Green, full opacity for readability */
+  color: #FFFFFF; /* White text */
+  padding: 10px;
   text-align: center;
-  font-size: 0.8em;
-  left: 15px;
-  right: 15px;
+  font-size: 0.9em;
   border-radius: 5px;
 }
-.page-bottom-banner {
-  background-color: #41644A80;
-  color: #F1F0E9;
-  padding: 5px;
-  text-align: center;
-  font-size: 0.8em;
-  left: 15px;
-  right: 15px;
-  border-radius: 5px;
+
+/* --- Panels and Cards --- */
+/* Applying the white panel with shadow effect from style_docs.css */
+.sidebar-panel, .bar-graph-panel, .card, .cardMap, .cardTable {
+  background-color: #ffffff; /* Changed from #F1F0E9 to white */
+  padding: 25px;
+  border-radius: 8px; /* Standardized border-radius */
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1); /* Soft shadow for depth */
+  border: 1px solid #ddd; /* Kept subtle border */
 }
 
 .sidebar-panel {
-  background-color: #F1F0E9;
-  padding: 15px;
   position: relative;
   height: 100vh;
-  border-radius: 5px;
-  border-right: 5px solid #E9762B50; /* Example: 5px solid black border on the right */
-}
-.map-panel {
-  padding: 30; /* Remove padding to make the map fill the container */
-}
-/* Ensure the map fills its container and takes full vertical space */
-/*
-#map1 {
-  height: 90vh !important;
-  border-radius: 5px;
-}
-#my_map2 {
-  height: 55vh !important;
-  border-radius: 5px;
-}
-*/
-.bar-graph-panel {
-  padding: 5px;
-  background-color: #F1F0E9;
-  border-radius: 5px;
-  margin-top: 5px;
-}
-.card {
-  background-color: #F1F0E9;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  box-shadow: 0 2px 4px rgba(0,0,0,.1);
-  padding: 15px;
-  margin-bottom: 20px;
-  height: 100vh !important;
-}
-.cardMap {
-  background-color: #F1F0E9;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  box-shadow: 0 2px 4px rgba(0,0,0,.1);
-  padding: 15px;
-  margin-bottom: 10px;
-  height: 60vh !important;
-}
-.cardTable {
-  background-color: #F1F0E9;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  box-shadow: 0 2px 4px rgba(0,0,0,.1);
-  padding: 15px;
-  margin-bottom: 10px;
-  height: 40vh !important;
+  padding: 0; /* Remove padding to allow banner to be full-width */
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  border-right: none;
 }
 
+.map-panel {
+  padding: 0; /* Remove padding to make the map fill the container */
+}
+
+.card, .cardMap, .cardTable {
+  margin-bottom: 20px; /* Space out cards */
+  height: auto !important; /* Let content define height */
+}
+
+/* --- General Heading Styles (from style_docs.css) --- */
+h1, h2, h3, h4, h5, h6 {
+  color: #1E4D2B; /* CSU Green */
+  font-weight: 600;
+}
+
+h2 {
+  background-color: #f0f0f0; /* Light gray background for section headers */
+  border-left: 5px solid #C8C372; /* CSU Gold accent */
+  padding: 10px 15px;
+  margin-top: 40px; /* Space out sections */
+  font-size: 1.8em;
+  border-radius: 4px;
+}
+
+h3 {
+  font-size: 1.4em;
+}
+
+/* --- Interactive Elements --- */
 .btn-block {
-  background-color: #41644A;
-  color: #F1F0E9;
+  display: block;
+  width: 100%;
+  background-color: #1E4D2B; /* CSU Green */
+  color: #FFFFFF;
   border-radius: 5px;
+  padding: 10px 15px;
+  text-align: center;
+  border: 1px solid transparent;
+  font-size: 1em;
+  font-weight: 600;
 } 
 
-.btn-primary:hover {
+.btn-primary:hover, .btn-block:hover {
+  background-color: #14351D; /* Darker green for hover */
   color: #fff;
-  background-color: #41644A80;
-  border-color: #E9762B;
+  text-decoration: none;
+  border-color: #C8C372; /* CSU Gold accent on hover */
 }
-  
-/* additional css elements */ 
+
+/* Link Styles (from style_docs.css) */
+a {
+  color: #1E4D2B; /* CSU Green for consistency */
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* --- Additional Elements --- */
 .info-box {
   border: 1px solid #ddd;
   border-radius: 5px;
-  padding: 10px;
+  padding: 15px;
   margin-top: 15px;
   margin-bottom: 15px;
-  background-color: #ffffff;
-  }
-  
+  background-color: #f9f9f9; /* Slightly off-white */
+}
+
 .tooltip-inner {
-  background-color: #006837; /* A dark green to match your theme */
-  color: #FFF; /* White text for contrast */
-  max-width: 500px; /* Adjust the maximum width */
-  text-align: center; /* Align text to the left if needed */
+  background-color: #1E4D2B; /* CSU Green to match your theme */
+  color: #FFF;
+  max-width: 500px;
+  text-align: left;
+  border-radius: 4px;
 }
   
-.tooltip.right .tooltip-arrow { border-right-color: #006837;}
-  
-/* Style for the fixed footer banner */
-.footer-banner {
-  position: relative;   /* Fixes the position relative to the browser window */
-  left: 0;
-  bottom: 0;         /* Aligns the banner to the bottom */
-  width: 100%;       /* Makes the banner span the full width */
-  background-color: #006837; /* Example background color (Bootstrap primary) */
-  color: white;      /* Text color */
-  text-align: center;/* Center the text inside the banner */
-  padding: 10px;     /* Add some space inside the banner */
-  /*z-index: -9999;     /* Ensures the banner stays on top of other content */
-  /* --- CSS Flexbox properties for alignment --- */
-  display: flex;                  /* Activates flexbox layout */
-  justify-content: space-between; /* Pushes items to opposite ends (left and right) */
-  align-items: center;            /* Vertically centers the items in the banner */
-  padding: 5px 20px;              /* Adjust padding (top/bottom and left/right) */
+.tooltip.right .tooltip-arrow { border-right-color: #1E4D2B;}
 
+/* Table Styling (from style_docs.css) */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+th, td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+thead th {
+  background-color: #f9f9f9;
+  font-weight: bold;
+  color: #333;
+  border-bottom: 2px solid #ccc;
+}
+
+tbody tr:hover {
+    background-color: #f5f5f5;
+}
+
+/* Style for the footer banner */
+.footer-banner {
+  position: relative;
+  width: 100%;
+  background-color: #1E4D2B; /* CSU Green */
+  color: white;
+  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
 }
