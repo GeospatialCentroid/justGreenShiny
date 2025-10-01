@@ -180,3 +180,54 @@ tbody tr:hover {
   align-items: center;
   padding: 10px 20px;
 }
+
+
+
+/* Styling for the landing page header */
+#app_title {
+  background-color: #f0ede6; /* This is a light beige/off-white color from your image */
+  border-left: 5px solid #C8C372; /* This is the gold/green vertical line */
+  padding: 10px 15px; /* Adjust padding as needed for spacing around the text */
+  margin: 0; /* Remove default margins if they interfere */
+  display: inline-block; /* Allows padding and border to wrap text correctly */
+  color: #1E4D2B; /* Assuming your text color is a dark green */
+  font-size: 24px; /* Adjust font size as needed */
+  border-radius: 3px; /* Slightly rounded corners, if desired */
+}
+
+/* You might need to adjust the header's own padding/margin if it's wrapping the title */
+.main-header .logo {
+  padding: 0; /* Example adjustment */
+}
+.main-header .navbar {
+  margin-left: 0; /* Example adjustment */
+}
+
+
+/* --- Styling for the map card header --- */
+#map_card .card-header {
+  background-color: #f0ede6; /* Light beige/off-white */
+  border-left: 5px solid #C8C372; /* Gold/green vertical line */
+  padding: 10px 15px; /* Adjust padding as needed */
+  color: #1E4D2B; /* Dark green text color */
+  font-family: 'Poppins', sans-serif; /* Use the same font as the body */
+  font-size: 1.4em; /* Adjust font size to be appropriate for a card title */
+  font-weight: 600; /* Make it bold */
+  border-bottom: 1px solid #ddd; /* A subtle line to separate from map content */
+}
+
+/* --- Gauge Card Layout Adjustments --- */
+
+/* 1. Makes the gaugeHeader div display on a single line */
+#gaugeHeader {
+  display: flex;
+  align-items: baseline; /* Aligns the text along its baseline */
+  gap: 8px; /* Adds a small space between "City Comparison:" and the metric name */
+  padding: 0px 0px 10px 0px; /* Adds 10px padding on top, 5px on bottom */
+}
+
+/* 2. Reduces the vertical whitespace inside the gauge card's body */
+#gauge_card .card-body {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
