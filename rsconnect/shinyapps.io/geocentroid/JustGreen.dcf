@@ -5,7 +5,7 @@ account: geocentroid
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 15308008
-bundleId: 10918744
+bundleId: 10980337
 url: https://geocentroid.shinyapps.io/JustGreen/
 version: 1
 asMultiple: FALSE
