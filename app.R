@@ -20,6 +20,8 @@ source("functions/gaugeChart.R")
 source("modules/Map1.R")
 source("modules/selector1.R")
 source("modules/gauge1.R")
+source("modules/Map2.R")
+source("modules/tractInfo.R")
 
 # UI ----------------------------------------------------------------------
 ui <- fluidPage(
@@ -30,7 +32,7 @@ ui <- fluidPage(
   navset_card_underline(
     id = "navbar",
     title = div(
-      img(src = "CSU-Symbol-r-K.png"), # height = "50px"
+      img(src = "CSU-Symbol-r-K.png"),
       tags$span(
         "JustGreen",
         style = "font-size: 24px; font-weight: bold; margin-left: 10px;"
@@ -66,14 +68,39 @@ ui <- fluidPage(
           gaugeUI("gauge")
         ),
         # Map module UI
-        mapUI("map"),
+        mapUI("map")
       )
     ),
 
     # page 2 ------------------------------------------------------------------
     nav_panel(
       title = "Census Tract Detail",
-      p("Census tract level details will go here")
+      layout_sidebar(
+        sidebar = sidebar(
+          width = "30%",
+          selectInput(
+            inputId = "citySelect2",
+            label = "Select a city",
+            choices = c(
+              "Select a city",
+              cityDF$fullCity
+            )
+          ),
+          selectInput(
+            inputId = "tractMetric",
+            label = "Display Metric",
+            choices = c(
+              "Greenness (NDVI)",
+              "Stroke Cases Prevented",
+              "Social Vulnerability (RPL)"
+            )
+          ),
+          # Tract info module UI
+          tractInfoUI("tractInfo")
+        ),
+        # Tract map module UI
+        tractMapUI("tractMap")
+      )
     ),
 
     # page 3 ------------------------------------------------------------------
@@ -86,8 +113,10 @@ ui <- fluidPage(
 
 # Server ------------------------------------------------------------------
 server <- function(input, output, session) {
-  # Reactive values for communication between modules
+  # Shared reactive value for selected city across both pages
   selected_city <- reactiveVal("")
+
+  # Page 1 - City Overview ------------------------------------------------
 
   # Update selected city from input
   observeEvent(input$citySelect, {
@@ -127,8 +156,45 @@ server <- function(input, output, session) {
     selected_city = selected_city,
     map_selector = reactive(input$mapSelector)
   )
-}
 
+  # Page 2 - Census Tract Detail ------------------------------------------
+
+  selected_tract <- reactiveVal("")
+
+  # Update Page 2 city selector when selected_city changes
+  observe({
+    if (selected_city() != "") {
+      updateSelectInput(session, "citySelect2", selected = selected_city())
+    }
+  })
+
+  # Update selected city from Page 2 input
+  observeEvent(input$citySelect2, {
+    if (input$citySelect2 != "Select a city") {
+      selected_city(input$citySelect2)
+    }
+  })
+
+  # Tract map module - returns clicked tract and tract data
+  tract_map_return <- tractMapServer(
+    "tractMap",
+    selected_city = selected_city,
+    cityDF = cityDF,
+    tract_metric = reactive(input$tractMetric)
+  )
+
+  # Update selected tract from map click
+  observeEvent(tract_map_return$clicked_tract(), {
+    req(tract_map_return$clicked_tract())
+    selected_tract(tract_map_return$clicked_tract())
+  })
+  # Tract info module
+  tractInfoServer(
+    "tractInfo",
+    selected_city = selected_city,
+    selected_tract = selected_tract
+  )
+}
 
 # Run the application
 shinyApp(ui = ui, server = server)
