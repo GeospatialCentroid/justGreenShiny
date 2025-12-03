@@ -24,7 +24,7 @@ gaugeServer <- function(id, cityDF, cityGPKG, selected_city, map_selector) {
   moduleServer(id, function(input, output, session) {
     selectedData <- reactive({
       req(selected_city())
-      cityDF |> dplyr::filter(fullCity == selected_city())
+      cityGPKG |> as.data.frame() |> dplyr::filter(fullCity == selected_city())
     })
 
     metric_name_reactive <- reactiveVal("Greenness level (NDVI)")
@@ -39,8 +39,8 @@ gaugeServer <- function(id, cityDF, cityGPKG, selected_city, map_selector) {
           p(style = "text-align: center;", "Low greenness → High greenness")
         })
 
-        selectedRate <- round(mean(cityDF$meanNDVI, na.rm = TRUE), 2)
-        valueRange <- round(range(cityDF$meanNDVI), 2)
+        selectedRate <- round(mean(cityGPKG$meanNDVI, na.rm = TRUE), 2)
+        valueRange <- round(range(cityGPKG$meanNDVI), 2)
         current_pal <- RColorBrewer::brewer.pal(n = 8, name = "BuGn")
 
         gaugePlot(

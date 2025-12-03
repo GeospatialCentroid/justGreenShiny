@@ -5,11 +5,11 @@ tractMapUI <- function(id) {
   card(
     id = "tract_map_card",
     full_screen = TRUE,
-    card_header("Census Tract Detail View"),
+    card_header("City Review View"),
     leafletOutput(ns("tract_map"), height = "85vh"),
     tags$div(
       class = "footer-banner",
-      tags$img(src = "CSU-Symbol-r-K.png", height = "80px"),
+      tags$img(src = "rojosLogo.png", height = "80px"),
       tags$span(
         "Rojos Lab - Geospatial Centroid",
         tags$br(),
@@ -24,113 +24,72 @@ tractMapUI <- function(id) {
 }
 
 # Census Tract Map Module Server
-tractMapServer <- function(id, selected_city, cityDF, tract_metric) {
+tractMapServer <- function(id, selected_city, cityGPKG, tract_metric, active_tab) {
   moduleServer(id, function(input, output, session) {
-    # Reactive to load tract data when city is selected
+    
+    # 1. Load tract data
     tract_data <- reactive({
       req(selected_city(), selected_city() != "")
-
-      # Get city info to construct file names
-      city_info <- cityDF[cityDF$fullCity == selected_city(), ]
-
-      req(nrow(city_info) > 0)
-
-      # Construct file names based on city and state
-      city_name <- city_info$city
-
-      # File paths
-      gpkg_file <- file.path(
-        "data",
-        "ctFiles",
-        paste0(city_name, "_ct.gpkg")
-      )
-      csv_file <- file.path(
-        "data",
-        "ctFiles",
-        paste0(city_name, "_ct.csv")
-      )
-
-      # Check if files exist
-      if (!file.exists(gpkg_file) || !file.exists(csv_file)) {
-        showNotification(
-          paste("Data files not found for", selected_city()),
-          type = "warning"
-        )
-        return(NULL)
+      req(active_tab() == "City Review")
+      
+      # Ideally, move readRDS outside the reactive if the file is large
+      # to prevent re-reading it on every city change.
+      allTracts <- readRDS("data/tractsGPKG.rds") 
+      
+      city_info <- cityGPKG[cityGPKG$fullCity == selected_city(), ]
+      geoid  <- city_info$GEOID
+      
+      tracts <- allTracts[[geoid]]
+      
+      # SAFEGUARD: Leaflet MUST use EPSG:4326 (Lat/Lon). 
+      # If your GPKG is in UTM/State Plane, it won't render.
+      if (sf::st_crs(tracts)$epsg != 4326) {
+        tracts <- sf::st_transform(tracts, 4326)
       }
-
-      # Load the files
-      tryCatch(
-        {
-          tract_gpkg <- sf::st_read(gpkg_file, quiet = TRUE)
-          tract_csv <- read.csv(csv_file) |>
-            dplyr::select(
-              GEOID,
-              meanNDVI,
-              popOver20_2023,
-              popOver35_2023,
-              popOver55_2023,
-              ls_Stroke,
-              ls_Mortality,
-              ls_Dementia,
-              RPL_THEMES
-            ) |>
-            dplyr::mutate(
-              GEOID = as.character(GEOID)
-            )
-
-          # Join the data
-          joined_data <- tract_gpkg |>
-            dplyr::left_join(tract_csv, by = "GEOID")
-
-          return(joined_data)
-        },
-        error = function(e) {
-          showNotification(
-            paste("Error loading data:", e$message),
-            type = "error"
-          )
-          return(NULL)
-        }
-      )
+      
+      return(tracts)
     })
-
-    # Initialize map
+    
+    # 2. Initialize map (Base layers only)
     output$tract_map <- renderLeaflet({
       leaflet() |>
         addProviderTiles(providers$CartoDB.Positron, group = "CartoDB") |>
         addTiles(group = "OpenStreetMap") |>
         addProviderTiles(providers$Esri.WorldImagery, group = "Esri Imagery") |>
-        setView(lng = -99.9018, lat = 39.3812, zoom = 5) |>
+        # Set a generic view initially, fitBounds will handle the rest later
+        setView(lng = -98.57, lat = 39.82, zoom = 4) |> 
         addLayersControl(
           baseGroups = c("CartoDB", "OpenStreetMap", "Esri Imagery"),
           options = layersControlOptions(collapsed = FALSE)
         )
     })
-
-    # Update map based on selected metric
-    observeEvent(list(tract_data(), tract_metric()), {
-      req(tract_data(), tract_metric())
-
+    
+    # 3. Update map (Proxy)
+    # CHANGED: Listen to BOTH data and metric changes
+    observe({
+      req(active_tab() == "City Review")
+      req(tract_data())
+      req(tract_metric()) # Ensure metric is selected
+      
       tract_sf <- tract_data()
       bounds <- sf::st_bbox(tract_sf)
-
-      # Configure palette and column based on selected metric
+      
+      # CHANGED: Switch on tract_metric(), not tract_data()
       metric_config <- switch(
-        tract_metric(),
+        tract_metric(), 
         "Greenness (NDVI)" = list(
           col = "meanNDVI",
           palette = "BuGn",
           title = "NDVI",
           popup_label = "NDVI",
-          domain = NULL # Use data range
+          domain = NULL 
         ),
         "Stroke Cases Prevented" = list(
           col = "ls_Stroke",
           palette = "BuPu",
           title = "Stroke Cases Prevented",
           popup_label = "Stroke Cases",
-          domain = NULL # Use data range
+          domain = NULL 
         ),
         "Social Vulnerability (RPL)" = list(
           col = "RPL_THEMES",
@@ -140,19 +99,21 @@ tractMapServer <- function(id, selected_city, cityDF, tract_metric) {
           domain = c(0, 1)
         )
       )
-
-      # Check if column exists
-      if (metric_config$col %in% names(tract_sf)) {
+      
+      # Check if column exists in the data
+      # (Using isTRUE ensures we don't crash if metric_config is NULL)
+      if (!is.null(metric_config) && metric_config$col %in% names(tract_sf)) {
+        
         # Create color palette
         pal <- colorNumeric(
           palette = metric_config$palette,
-          domain = tract_sf[[metric_config$col]],
+          domain = if(is.null(metric_config$domain)) tract_sf[[metric_config$col]] else metric_config$domain,
           na.color = "transparent"
         )
-
+        
         leafletProxy("tract_map") |>
           clearShapes() |>
-          clearControls() |>
+          clearControls() |> # Removes old legends
           addPolygons(
             data = tract_sf,
             fillColor = ~ pal(tract_sf[[metric_config$col]]),
@@ -168,27 +129,23 @@ tractMapServer <- function(id, selected_city, cityDF, tract_metric) {
             ),
             label = ~ paste("Tract:", GEOID),
             popup = ~ paste(
-              "<b>Census Tract:</b>",
-              GEOID,
-              "<br>",
+              "<b>Census Tract:</b>", GEOID, "<br>",
               paste0("<b>", metric_config$popup_label, ":</b> "),
               round(tract_sf[[metric_config$col]], 3)
             )
           ) |>
           addLegend(
             pal = pal,
-            values = tract_sf[[metric_config$col]],
+            values = if(is.null(metric_config$domain)) tract_sf[[metric_config$col]] else metric_config$domain,
             title = metric_config$title,
             position = "bottomright"
           ) |>
           fitBounds(
-            lng1 = bounds[["xmin"]],
-            lat1 = bounds[["ymin"]],
-            lng2 = bounds[["xmax"]],
-            lat2 = bounds[["ymax"]]
+            lng1 = bounds[["xmin"]], lat1 = bounds[["ymin"]],
+            lng2 = bounds[["xmax"]], lat2 = bounds[["ymax"]]
           )
       } else {
-        # If column doesn't exist, display basic tracts
+        # Fallback if metric not found
         leafletProxy("tract_map") |>
           clearShapes() |>
           clearControls() |>
@@ -202,19 +159,17 @@ tractMapServer <- function(id, selected_city, cityDF, tract_metric) {
             label = ~ paste("Tract:", GEOID)
           ) |>
           fitBounds(
-            lng1 = bounds[["xmin"]],
-            lat1 = bounds[["ymin"]],
-            lng2 = bounds[["xmax"]],
-            lat2 = bounds[["ymax"]]
+            lng1 = bounds[["xmin"]], lat1 = bounds[["ymin"]],
+            lng2 = bounds[["xmax"]], lat2 = bounds[["ymax"]]
           )
       }
     })
-
+    
     # Return clicked tract ID
     clicked_tract <- reactive({
       input$tract_map_shape_click$id
     })
-
+    
     return(list(
       clicked_tract = clicked_tract,
       tract_data = tract_data

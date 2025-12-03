@@ -9,7 +9,7 @@ mapUI <- function(id) {
     leafletOutput(ns("map"), height = "85vh"),
     tags$div(
       class = "footer-banner",
-      tags$img(src = "CSU-Symbol-r-K.png", height = "80px"),
+      tags$img(src = "rojosLogo.png", height = "80px"),
       tags$span(
         "Rojos Lab - Geospatial Centroid",
         tags$br(),
@@ -43,9 +43,15 @@ mapServer <- function(id, cityGPKG, cityCentroid, selected_city, map_selector) {
       palette = "OrRd",
       domain = as.numeric(cityGPKG$ls_Dementia_Rate)
     )
-
+  
+    # define popup elements 
+    
+    
     # Render initial map
     output$map <- renderLeaflet({
+      
+      # adjust order of the color palette
+      
       leaflet() |>
         addProviderTiles(providers$CartoDB.Positron, group = "CartoDB") |>
         addTiles(group = "OpenStreetMap") |>

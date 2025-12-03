@@ -8,12 +8,22 @@ library(shinyBS)
 library(RColorBrewer)
 library(bslib)
 
-# Parameters and datasets
+# Parameters 
 zoom_switch <- 9
 circleRadius <- 10
-cityGPKG <- sf::st_read("data/top200_simple.gpkg")
-cityDF <- read.csv("data/top200.csv")
-cityCentroid <- sf::st_read("data/top200_centroid.gpkg")
+# datasets for the landing page 
+cityGPKG <- readRDS("data/citiesGPKG.rds")
+healthData <- readRDS("data/healthData.rds")
+cityDF <- healthData[[1]]
+# might want to change to read in on census track page 
+tractsDF <- healthData[[2]]
+# appended data to the gpkg 
+
+
+
+# cityGPKG <- sf::st_read("data/top200_simple.gpkg")
+# cityDF <- read.csv("data/top200.csv")
+cityCentroid <- readRDS("data/centroidGPKG.rds")
 
 # Source functions and modules
 source("functions/gaugeChart.R")
@@ -25,14 +35,20 @@ source("modules/tractInfo.R")
 
 # UI ----------------------------------------------------------------------
 ui <- fluidPage(
+  theme = bs_theme(
+    version = 5, 
+    preset = "minty", 
+    primary = "#1E4D2B",
+    secondary = "#558B6E"
+  ),
   # --- Custom CSS for banners and layout ---
   includeCSS("www/styles.css"),
 
   # page 1  -----------------------------------------------------------------
-  navset_card_underline(
+  navset_card_pill(
     id = "navbar",
     title = div(
-      img(src = "CSU-Symbol-r-K.png"),
+      img(src = "CSU-Symbol-r-K.png",style = "height: 100px; width: auto;" ),
       tags$span(
         "JustGreen",
         style = "font-size: 24px; font-weight: bold; margin-left: 10px;"
@@ -40,7 +56,7 @@ ui <- fluidPage(
     ),
 
     nav_panel(
-      title = "City Overview",
+      title = "Country Overview",
       layout_sidebar(
         sidebar = sidebar(
           width = "30%",
@@ -74,7 +90,7 @@ ui <- fluidPage(
 
     # page 2 ------------------------------------------------------------------
     nav_panel(
-      title = "Census Tract Detail",
+      title = "City Review",
       layout_sidebar(
         sidebar = sidebar(
           width = "30%",
@@ -116,7 +132,7 @@ server <- function(input, output, session) {
   # Shared reactive value for selected city across both pages
   selected_city <- reactiveVal("")
 
-  # Page 1 - City Overview ------------------------------------------------
+  # Page 1 - Country Overview ------------------------------------------------
 
   # Update selected city from input
   observeEvent(input$citySelect, {
@@ -157,7 +173,7 @@ server <- function(input, output, session) {
     map_selector = reactive(input$mapSelector)
   )
 
-  # Page 2 - Census Tract Detail ------------------------------------------
+  # Page 2 - City Review ------------------------------------------
 
   selected_tract <- reactiveVal("")
 
@@ -179,8 +195,9 @@ server <- function(input, output, session) {
   tract_map_return <- tractMapServer(
     "tractMap",
     selected_city = selected_city,
-    cityDF = cityDF,
-    tract_metric = reactive(input$tractMetric)
+    cityGPKG = cityGPKG,
+    tract_metric = reactive(input$tractMetric),
+    active_tab = reactive(input$navbar)
   )
 
   # Update selected tract from map click

@@ -5,6 +5,7 @@ Key Changes:
 - Color palette switched to CSU Green and Gold
 - Panels and cards updated to a white background with box-shadow for depth
 - Added consistent styling for headings, links, and tables.
+- Navbar buttons (pills) styled as high-contrast Green/Gold buttons.
 --- */
 
 /* 1. Define the local font source (copied from style_docs.css) */
@@ -15,6 +16,16 @@ Key Changes:
   font-style: normal;
 }
 
+:root {
+  --color-pine-dark: #0B2613;
+  --color-pine-base: #1E4D2B; /* Your Anchor */
+  --color-fern: #558B6E;
+  --color-sage: #88A096;
+  --color-mist: #E3EBE6;
+  --color-csuGold : #C8C372;
+}
+
+
 /* 2. Apply global styles to the body */
 body {
   font-family: 'Poppins', Arial, sans-serif; /* Changed from Arial to Poppins */
@@ -24,12 +35,26 @@ body {
   margin: 0;
   padding: 0; /* Changed from original to allow full-width elements */
 }
+
 /* --- Styling for the navset card header (JustGreen title area) --- */
 .bslib-navs-card-title {
   background-color: #f0ede6 !important; /* Light beige/off-white - same as card headers */
   border-left: 5px solid #C8C372 !important; /* Gold/green vertical line */
   padding: 0.75rem 1rem !important;
   border-radius: 3px;
+  
+  /* Flexbox for alignment of Logo and Text */
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* SPECIFIC TARGETING FOR "JustGreen" TEXT SIZE & COLOR */
+.bslib-navs-card-title span {
+  font-size: 80px !important;    /* Large Title */
+  font-weight: 800 !important;   /* Extra Bold */
+  color: #1E4D2B !important;     /* CSU Green */
+  margin-left: 15px;             /* Space from logo */
+  line-height: 1;
 }
 
 /* Alternative: target the card itself */
@@ -71,7 +96,7 @@ body {
   padding: 25px;
   border-radius: 8px; /* Standardized border-radius */
   box-shadow: 0 4px 10px rgba(0,0,0,0.1); /* Soft shadow for depth */
-  border: 1px solid #ddd; /* Kept subtle border */
+  border: 1px solid #E3EBE6; /* Kept subtle border */
 }
 
 .sidebar-panel {
@@ -124,13 +149,6 @@ h3 {
   font-weight: 600;
 } 
 
-.btn-primary:hover, .btn-block:hover {
-  background-color: #14351D; /* Darker green for hover */
-  color: #fff;
-  text-decoration: none;
-  border-color: #C8C372; /* CSU Gold accent on hover */
-}
-
 /* Link Styles (from style_docs.css) */
 a {
   color: #1E4D2B; /* CSU Green for consistency */
@@ -143,7 +161,7 @@ a:hover {
 
 /* --- Additional Elements --- */
 .info-box {
-  border: 1px solid #ddd;
+  border: 1px solid #E3EBE6;
   border-radius: 5px;
   padding: 15px;
   margin-top: 15px;
@@ -172,7 +190,7 @@ table {
 th, td {
   padding: 12px 15px;
   text-align: left;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid #E3EBE6;
 }
 
 thead th {
@@ -198,8 +216,6 @@ tbody tr:hover {
   align-items: center;
   padding: 10px 20px;
 }
-
-
 
 /* Styling for the landing page header */
 #app_title {
@@ -231,7 +247,7 @@ tbody tr:hover {
   font-family: 'Poppins', sans-serif; /* Use the same font as the body */
   font-size: 1.4em; /* Adjust font size to be appropriate for a card title */
   font-weight: 600; /* Make it bold */
-  border-bottom: 1px solid #ddd; /* A subtle line to separate from map content */
+  border-bottom: 1px solid #E3EBE6; /* A subtle line to separate from map content */
 }
 
 /* --- Gauge Card Layout Adjustments --- */
@@ -248,4 +264,30 @@ tbody tr:hover {
 #gauge_card .card-body {
   padding-top: 5px;
   padding-bottom: 5px;
+}
+
+/* --- Navbar Selector Visibility Enhancements (Green/Gold Pills) --- */
+
+/* Force styling on the new Pill Navs */
+.bslib-navs-card .nav-pills .nav-link {
+  background-color: #f0ede6 !important; /* Beige background */
+  color: #1E4D2B !important;            /* Green text */
+  border: 1px solid #C8C372 !important; /* Gold border */
+  font-weight: bold !important;
+  font-size: 1.2rem !important;         /* Larger text */
+  margin-right: 10px !important;        /* Space between buttons */
+  border-radius: 5px !important;        /* Slightly rounded buttons */
+}
+
+/* Active State (The Selected Button) */
+.bslib-navs-card .nav-pills .nav-link.active {
+  background-color: #1E4D2B !important; /* Green Background */
+  color: #C8C372 !important;              /* White text */
+  border-color: #1E4D2B !important;
+}
+
+/* Hover State */
+.bslib-navs-card .nav-pills .nav-link:hover {
+  background-color: #C8C372 !important; /* Gold hover */
+  color: #1E4D2B !important;
 }
