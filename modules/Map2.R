@@ -27,48 +27,69 @@ tractMapUI <- function(id) {
 tractMapServer <- function(id, selected_city, cityGPKG, tractsDF, tract_metric, active_tab) {
   moduleServer(id, function(input, output, session) {
     
+    # Define consistent names for layers
+    data_layer_group <- "Tract Metrics"
+    boundary_group <- "City Boundary" # New Group Name
+    legend_id <- "map_legend"
+    
+    # 3. NEW: Update City Boundary (Runs only when city changes)
+    city_boundary <-  reactive({
+      req(selected_city())
+      req(cityGPKG)
+      
+      # Filter for the specific city boundary
+      # assuming cityGPKG is your spatial object containing city polygons
+      cityGPKG[cityGPKG$fullCity == selected_city(), ]
+    })
+    
     # 1. Load tract data
     tract_data <- reactive({
       req(selected_city(), selected_city() != "")
       req(active_tab() == "City Review")
       
-      # Ideally, move readRDS outside the reactive if the file is large
-      # to prevent re-reading it on every city change.
       allTracts <- readRDS("data/tractsGPKG.rds") 
-      # test set 
       
-      city_info <- cityGPKG[cityGPKG$fullCity == "Milwaukee, Wisconsin", ]
       city_info <- cityGPKG[cityGPKG$fullCity == selected_city(), ]
       geoid  <- city_info$GEOID
-      # this is the spatial data object 
       tracts <- allTracts[[geoid]]
       
-      # pull in the health data for the specific city 
       ct_health <- tractsDF |>
-        dplyr::filter(GEOID %in% tracts$GEOID) |>
-        dplyr::select("GEOID","meanNDVI")
-      # join this to the tracts spatial object 
+        dplyr::filter(GEOID %in% tracts$GEOID)
       tracts <- tracts |>
         dplyr::left_join(y = ct_health, by = "GEOID")
       
       return(tracts)
     })
     
-    # 2. Initialize map (Base layers only)
+    # 2. Initialize map
     output$tract_map <- renderLeaflet({
       leaflet() |>
+        # Create a custom pane with high zIndex so the boundary is always on top
+        addMapPane("borders", zIndex = 410) |> 
         addProviderTiles(providers$CartoDB.Positron, group = "CartoDB") |>
         addTiles(group = "OpenStreetMap") |>
         addProviderTiles(providers$Esri.WorldImagery, group = "Esri Imagery") |>
-        # Set a generic view initially, fitBounds will handle the rest later
         setView(lng = -98.57, lat = 39.82, zoom = 4) |> 
         addLayersControl(
           baseGroups = c("CartoDB", "OpenStreetMap", "Esri Imagery"),
+          # Add the new boundary group to the list
+          overlayGroups = c(data_layer_group, boundary_group), 
           options = layersControlOptions(collapsed = FALSE)
+        )|>
+        addPolygons(
+          data = city_boundary(),
+          group = boundary_group,
+          fill = FALSE,         # No fill
+          color = "#52525295",      # Dark outline
+          weight = 3,           # Slightly thicker than tracts
+          opacity = 1,
+          options = pathOptions(pane = "borders", clickable = FALSE) # Use custom pane & disable clicks
         )
     })
     
-    # 3. Update map (Proxy)
+ 
+    
+    # 4. Update Tracts (Proxy)
     observe({
       req(active_tab() == "City Review")
       req(tract_data())
@@ -77,39 +98,51 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsDF, tract_metric, 
       tract_sf <- tract_data()
       bounds <- sf::st_bbox(tract_sf)
       
-      # REMOVED: pal1 definition. We will define the string inside the switch instead.
-      
       metric_config <- switch(
         tract_metric(),
         "Current Vegetation Levels" = list(
-          palette = "BuGn",          # CHANGED: Pass the string name, not the function
+          palette = "BuGn",          
           col = "meanNDVI",
           title = "Greenness level (NDVI)"
         ),
+        "Lives Saved" = list(
+          palette = "PuBuGn",
+          col = "ls_Mortality_Rate",
+          title = "Lives Save per 100,000"
+        ),
+        "Stroke Cases Prevented" = list(
+          palette = "BuPu",
+          col = "ls_Stroke_Rate",
+          title = "Stroke Cases Prevented per 100,000"
+        ),
+        "Dementia Cases Prevented" = list(
+          palette = "OrRd",
+          col = "ls_Dementia_Rate",
+          title = "Dementia Cases Prevented per 100,000"
+        ),
         "Social Vulnerability (RPL)" = list(
           col = "RPL_THEMES",
-          palette = "OrRd",
+          palette = "YlGnBu",
           title = "RPL Themes",
           popup_label = "RPL",
           domain = c(0, 1)
         )
       )
       
-      # Check if column exists in the data
       if (!is.null(metric_config) && metric_config$col %in% names(tract_sf)) {
         
-        # Create color palette dynamically here
         pal <- colorNumeric(
-          palette = metric_config$palette, # Now this will always find a string ("BuGn" or "OrRd")
+          palette = metric_config$palette,
           domain = if(is.null(metric_config$domain)) tract_sf[[metric_config$col]] else metric_config$domain,
           na.color = "transparent"
         )
         
         leafletProxy("tract_map") |>
-          clearShapes() |>
-          clearControls() |> 
+          clearGroup(data_layer_group) |>
+          removeControl(layerId = legend_id) |> 
           addPolygons(
             data = tract_sf,
+            group = data_layer_group, 
             fillColor = ~ pal(tract_sf[[metric_config$col]]),
             fillOpacity = 0.7,
             color = "#444444",
@@ -119,10 +152,9 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsDF, tract_metric, 
               weight = 3,
               color = "#666",
               fillOpacity = 0.9,
-              bringToFront = TRUE
+              bringToFront = FALSE # Changed to FALSE so it doesn't cover the city boundary
             ),
             label = ~ paste("Tract:", GEOID),
-            # FIX: Added check for popup_label to prevent error if it's missing in "Current Vegetation Levels"
             popup = ~ paste(
               "<b>Census Tract:</b>", GEOID, "<br>",
               paste0("<b>", ifelse(!is.null(metric_config$popup_label), metric_config$popup_label, metric_config$title), ":</b> "),
@@ -130,6 +162,7 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsDF, tract_metric, 
             )
           ) |>
           addLegend(
+            layerId = legend_id, 
             pal = pal,
             values = if(is.null(metric_config$domain)) tract_sf[[metric_config$col]] else metric_config$domain,
             title = metric_config$title,
@@ -140,12 +173,13 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsDF, tract_metric, 
             lng2 = bounds[["xmax"]], lat2 = bounds[["ymax"]]
           )
       } else {
-        # Fallback if metric not found
+        # Fallback
         leafletProxy("tract_map") |>
-          clearShapes() |>
-          clearControls() |>
+          clearGroup(data_layer_group) |>
+          removeControl(layerId = legend_id) |>
           addPolygons(
             data = tract_sf,
+            group = data_layer_group, 
             fillColor = "#3388ff",
             fillOpacity = 0.5,
             color = "#444444",

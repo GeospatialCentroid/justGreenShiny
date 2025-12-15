@@ -21,7 +21,7 @@ tractInfoUI <- function(id) {
       uiOutput(ns("tract_ndvi"))
     ),
     div(
-      tags$b("Health Metrics:"),
+      tags$b("Health Metrics per 100,000:"),
       uiOutput(ns("tract_health"))
     )
   )
@@ -79,8 +79,28 @@ tractInfoServer <- function(id, selected_city, selected_tract, tract_data) {
       info <- current_tract_data()
       if (is.null(info)) return(HTML("--"))
       
-      # Example placeholder for health metrics
-      HTML("Health data pending")
+      # Initialize an empty list of items
+      items <- c()
+      
+      # Check for Stroke Data
+      if ("ls_Stroke_Rate" %in% names(info)) {
+        val <- round(info$ls_Stroke_Rate, 2)
+        # Using <div> for cleaner stacking, or you can use <br>
+        items <- c(items, paste0("<div>Stroke Cases Prevented: <b>", val, "</b></div>"))
+      }
+      
+      # Check for Dementia Data
+      if ("ls_Dementia_Rate" %in% names(info)) {
+        val <- round(info$ls_Dementia_Rate, 2)
+        items <- c(items, paste0("<div>Dementia Cases Prevented: <b>", val, "</b></div>"))
+      }
+      
+      # Combine items or show fallback
+      if (length(items) > 0) {
+        HTML(paste(items, collapse = ""))
+      } else {
+        HTML("Health data pending")
+      }
     })
   })
 }

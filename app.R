@@ -17,8 +17,9 @@ healthData <- readRDS("data/healthData.rds")
 cityDF <- healthData[[1]]
 # might want to change to read in on census track page 
 tractsDF <- healthData[[2]]
-# appended data to the gpkg 
 
+# read in summary html data 
+citySummary <- readRDS("data/citySummary.rds")
 
 
 # cityGPKG <- sf::st_read("data/top200_simple.gpkg")
@@ -65,7 +66,7 @@ ui <- fluidPage(
             label = "Select a city",
             choices = c(
               "Select a city",
-              cityDF$fullCity
+              sort(cityDF$fullCity)
             )
           ),
           selectInput(
@@ -114,7 +115,10 @@ ui <- fluidPage(
             )
           ),
           # Tract info module UI
-          tractInfoUI("tractInfo")
+          tractInfoUI("tractInfo"),
+          
+          tags$hr(), # Optional: Visual separator
+          downloadButton("downloadReport", "Download Report", class = "btn-primary w-100")
         ),
         # Tract map module UI
         tractMapUI("tractMap")
@@ -215,6 +219,55 @@ server <- function(input, output, session) {
     selected_tract = selected_tract,
     tract_data = tract_map_return$tract_data
   )
+  # --- UPDATED DOWNLOAD HANDLER ---
+  output$downloadReport <- downloadHandler(
+    filename = function() {
+      req(selected_city())
+      clean_name <- gsub(" ", "_", selected_city())
+      paste0(clean_name, "_Report.html")
+    },
+    content = function(file) {
+      req(selected_city(), selected_city() != "Select a city")
+      
+      # Start the progress bar
+      shiny::withProgress(
+        message = 'Generating Report',
+        detail = 'Initializing...',
+        value = 0, {
+          
+          # Wait 1 second
+          Sys.sleep(1)
+          
+          # Step 1: Look up data
+          incProgress(0.3, detail = paste("Retrieving data for", selected_city(), "..."))
+          Sys.sleep(1) # Wait 1 second
+          
+          # Use the pre-loaded 'citySummary' object
+          if (selected_city() %in% names(citySummary)) {
+            report_content <- citySummary[[selected_city()]]
+          } 
+          else if (is.data.frame(citySummary)) {
+            # Update 'html_content' to your actual column name
+            report_content <- citySummary$html_content[citySummary$fullCity == selected_city()]
+          } else {
+            report_content <- NULL
+          }
+          
+          # Step 2: Finalize
+          incProgress(0.7, detail = "Finalizing download...")
+          Sys.sleep(1) # Wait 1 second
+          
+          # Step 3: Write to file
+          if (!is.null(report_content) && length(report_content) > 0) {
+            writeLines(as.character(report_content), file)
+          } else {
+            writeLines("<h1>Report not available for this city</h1>", file)
+          }
+        }
+      ) # End withProgress
+    }
+  )
+  
 }
 
 # Run the application
