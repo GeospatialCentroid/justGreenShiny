@@ -24,7 +24,7 @@ tractMapUI <- function(id) {
 }
 
 # Census Tract Map Module Server
-tractMapServer <- function(id, selected_city, cityGPKG, tract_metric, active_tab) {
+tractMapServer <- function(id, selected_city, cityGPKG, tractsDF, tract_metric, active_tab) {
   moduleServer(id, function(input, output, session) {
     
     # 1. Load tract data
@@ -35,17 +35,21 @@ tractMapServer <- function(id, selected_city, cityGPKG, tract_metric, active_tab
       # Ideally, move readRDS outside the reactive if the file is large
       # to prevent re-reading it on every city change.
       allTracts <- readRDS("data/tractsGPKG.rds") 
+      # test set 
       
+      city_info <- cityGPKG[cityGPKG$fullCity == "Milwaukee, Wisconsin", ]
       city_info <- cityGPKG[cityGPKG$fullCity == selected_city(), ]
       geoid  <- city_info$GEOID
-      
+      # this is the spatial data object 
       tracts <- allTracts[[geoid]]
       
-      # SAFEGUARD: Leaflet MUST use EPSG:4326 (Lat/Lon). 
-      # If your GPKG is in UTM/State Plane, it won't render.
-      if (sf::st_crs(tracts)$epsg != 4326) {
-        tracts <- sf::st_transform(tracts, 4326)
-      }
+      # pull in the health data for the specific city 
+      ct_health <- tractsDF |>
+        dplyr::filter(GEOID %in% tracts$GEOID) |>
+        dplyr::select("GEOID","meanNDVI")
+      # join this to the tracts spatial object 
+      tracts <- tracts |>
+        dplyr::left_join(y = ct_health, by = "GEOID")
       
       return(tracts)
     })
@@ -65,31 +69,22 @@ tractMapServer <- function(id, selected_city, cityGPKG, tract_metric, active_tab
     })
     
     # 3. Update map (Proxy)
-    # CHANGED: Listen to BOTH data and metric changes
     observe({
       req(active_tab() == "City Review")
       req(tract_data())
-      req(tract_metric()) # Ensure metric is selected
+      req(tract_metric()) 
       
       tract_sf <- tract_data()
       bounds <- sf::st_bbox(tract_sf)
       
-      # CHANGED: Switch on tract_metric(), not tract_data()
+      # REMOVED: pal1 definition. We will define the string inside the switch instead.
+      
       metric_config <- switch(
-        tract_metric(), 
-        "Greenness (NDVI)" = list(
+        tract_metric(),
+        "Current Vegetation Levels" = list(
+          palette = "BuGn",          # CHANGED: Pass the string name, not the function
           col = "meanNDVI",
-          palette = "BuGn",
-          title = "NDVI",
-          popup_label = "NDVI",
-          domain = NULL 
-        ),
-        "Stroke Cases Prevented" = list(
-          col = "ls_Stroke",
-          palette = "BuPu",
-          title = "Stroke Cases Prevented",
-          popup_label = "Stroke Cases",
-          domain = NULL 
+          title = "Greenness level (NDVI)"
         ),
         "Social Vulnerability (RPL)" = list(
           col = "RPL_THEMES",
@@ -101,19 +96,18 @@ tractMapServer <- function(id, selected_city, cityGPKG, tract_metric, active_tab
       )
       
       # Check if column exists in the data
-      # (Using isTRUE ensures we don't crash if metric_config is NULL)
       if (!is.null(metric_config) && metric_config$col %in% names(tract_sf)) {
         
-        # Create color palette
+        # Create color palette dynamically here
         pal <- colorNumeric(
-          palette = metric_config$palette,
+          palette = metric_config$palette, # Now this will always find a string ("BuGn" or "OrRd")
           domain = if(is.null(metric_config$domain)) tract_sf[[metric_config$col]] else metric_config$domain,
           na.color = "transparent"
         )
         
         leafletProxy("tract_map") |>
           clearShapes() |>
-          clearControls() |> # Removes old legends
+          clearControls() |> 
           addPolygons(
             data = tract_sf,
             fillColor = ~ pal(tract_sf[[metric_config$col]]),
@@ -128,9 +122,10 @@ tractMapServer <- function(id, selected_city, cityGPKG, tract_metric, active_tab
               bringToFront = TRUE
             ),
             label = ~ paste("Tract:", GEOID),
+            # FIX: Added check for popup_label to prevent error if it's missing in "Current Vegetation Levels"
             popup = ~ paste(
               "<b>Census Tract:</b>", GEOID, "<br>",
-              paste0("<b>", metric_config$popup_label, ":</b> "),
+              paste0("<b>", ifelse(!is.null(metric_config$popup_label), metric_config$popup_label, metric_config$title), ":</b> "),
               round(tract_sf[[metric_config$col]], 3)
             )
           ) |>

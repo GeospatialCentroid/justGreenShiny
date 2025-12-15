@@ -106,8 +106,10 @@ ui <- fluidPage(
             inputId = "tractMetric",
             label = "Display Metric",
             choices = c(
-              "Greenness (NDVI)",
+              "Current Vegetation Levels",
+              "Lives Saved",
               "Stroke Cases Prevented",
+              "Dementia Cases Prevented",
               "Social Vulnerability (RPL)"
             )
           ),
@@ -196,6 +198,7 @@ server <- function(input, output, session) {
     "tractMap",
     selected_city = selected_city,
     cityGPKG = cityGPKG,
+    tractsDF = tractsDF,
     tract_metric = reactive(input$tractMetric),
     active_tab = reactive(input$navbar)
   )
@@ -209,7 +212,8 @@ server <- function(input, output, session) {
   tractInfoServer(
     "tractInfo",
     selected_city = selected_city,
-    selected_tract = selected_tract
+    selected_tract = selected_tract,
+    tract_data = tract_map_return$tract_data
   )
 }
 

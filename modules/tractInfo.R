@@ -13,7 +13,7 @@ tractInfoUI <- function(id) {
       uiOutput(ns("tract_name"))
     ),
     div(
-      tags$b("Population:"),
+      tags$b("Population Over 20:"),
       uiOutput(ns("tract_pop"))
     ),
     div(
@@ -28,41 +28,59 @@ tractInfoUI <- function(id) {
 }
 
 # Tract Info Module Server
-tractInfoServer <- function(id, selected_city, selected_tract) {
+tractInfoServer <- function(id, selected_city, selected_tract, tract_data) {
   moduleServer(id, function(input, output, session) {
+    
+    # Helper: Find the specific row for the selected tract
+    current_tract_data <- reactive({
+      req(tract_data()) # Ensure data exists
+      req(selected_tract()) # Ensure a tract is clicked
+      
+      # Filter the reactive data for the specific GEOID
+      data <- tract_data()
+      target <- data[data$GEOID == selected_tract(), ]
+      
+      if (nrow(target) == 0) return(NULL)
+      return(target)
+    })
+    
     output$tract_name <- renderUI({
-      if (is.null(selected_tract()) || selected_tract() == "") {
-        HTML("No tract selected")
-      } else {
-        HTML(paste("Tract ID:", selected_tract()))
-      }
+      req(selected_tract())
+      HTML(paste("Tract ID:", selected_tract()))
     })
-
+    
     output$tract_pop <- renderUI({
-      if (is.null(selected_tract()) || selected_tract() == "") {
-        HTML("--")
+      info <- current_tract_data()
+      if (is.null(info)) return(HTML("--"))
+      
+      # Check that 'total_pop' matches your actual column name in tractsDF
+      if ("over20" %in% names(info)) {
+        pop_val <- info$over20  
+        HTML(format(pop_val, big.mark = ","))
       } else {
-        # TODO: Get actual population data
-        HTML("Data pending")
+        HTML("Column 'over20' not found")
       }
     })
-
+    
     output$tract_ndvi <- renderUI({
-      if (is.null(selected_tract()) || selected_tract() == "") {
-        HTML("--")
+      info <- current_tract_data()
+      if (is.null(info)) return(HTML("--"))
+      
+      if ("meanNDVI" %in% names(info)) {
+        # Round to 3 decimal places
+        ndvi_val <- round(info$meanNDVI, 3) 
+        HTML(as.character(ndvi_val))
       } else {
-        # TODO: Get actual NDVI data
-        HTML("Data pending")
+        HTML("--")
       }
     })
-
+    
     output$tract_health <- renderUI({
-      if (is.null(selected_tract()) || selected_tract() == "") {
-        HTML("--")
-      } else {
-        # TODO: Get actual health metrics
-        HTML("Data pending")
-      }
+      info <- current_tract_data()
+      if (is.null(info)) return(HTML("--"))
+      
+      # Example placeholder for health metrics
+      HTML("Health data pending")
     })
   })
 }
