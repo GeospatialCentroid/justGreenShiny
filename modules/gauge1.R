@@ -1,26 +1,24 @@
 # Gauge Module UI
+# Gauge Module UI
 gaugeUI <- function(id) {
   ns <- NS(id)
   
   card(
     id = "gauge_card",
-    style = "max-height: 350px; overflow-y: auto;", # Increased slightly for text space
+    style = "max-height: 350px; overflow-y: auto;",
     
-    # 1. Chart
     card_body(
       plotlyOutput(ns("gauge_chart"), height = "120px"),
       uiOutput(ns("gaugeText"))
     ),
     
-    # 2. Dynamic Description (Replaces the old title)
+    # Updated: Removed inline styles so CSS #gaugeHeader controls the look
     div(
       id = "gaugeHeader",
-      style = "padding: 0px 15px 15px 15px; text-align: center; font-size: 0.9rem; color: #444;",
       uiOutput(ns("metric_desc")) 
     )
   )
 }
-
 # Gauge Module Server
 gaugeServer <- function(id, cityDF, cityGPKG, selected_city, map_selector) {
   moduleServer(id, function(input, output, session) {

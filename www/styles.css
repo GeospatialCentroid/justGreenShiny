@@ -253,13 +253,26 @@ tbody tr:hover {
 /* --- Gauge Card Layout Adjustments --- */
 
 /* 1. Makes the gaugeHeader div display on a single line */
-#gaugeHeader {
-  display: flex;
-  align-items: baseline; /* Aligns the text along its baseline */
-  gap: 8px; /* Adds a small space between "City Comparison:" and the metric name */
-  padding: 0px 0px 10px 0px; /* Adds 10px padding on top, 5px on bottom */
-}
+/* --- Gauge Card Text Enhancements --- */
 
+#gaugeHeader {
+  /* 1. Create a container distinct from the white card background */
+  background-color: var(--color-mist); /* Uses your defined light sage/grey */
+  border-left: 5px solid var(--color-csuGold); /* Matches your H2 and Header styling */
+  border-radius: 0 4px 4px 0; /* Rounded corners on the right only */
+
+  /* 2. Positioning and Spacing */
+  margin: 10px 15px 15px 15px; /* Spacing away from the chart and card edges */
+  padding: 12px 15px; /* Internal breathing room for the text */
+  
+  /* 3. Typography for Clarity */
+  display: block; /* Ensure text wraps naturally as a paragraph */
+  text-align: left; /* Left alignment is faster to read for multi-line descriptions */
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem; /* Slightly smaller than body text to denote it as a caption */
+  line-height: 1.5;
+  color: var(--color-pine-dark); /* High contrast dark green text */
+}
 /* 2. Reduces the vertical whitespace inside the gauge card's body */
 #gauge_card .card-body {
   padding-top: 5px;
