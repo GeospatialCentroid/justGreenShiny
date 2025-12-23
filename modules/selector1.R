@@ -1,38 +1,44 @@
 # City Info Module UI
 cityInfoUI <- function(id) {
   ns <- NS(id)
-
+  
   div(
     class = "info-box",
-    h5(
-      "City Report",
-      style = "text-align: center; color: #2c3e50; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-top: 0;"
-    ),
+    
+    # --- CONSOLIDATED HEADER SECTION ---
     div(
-      tags$b("Annual Health Benefits (Current Green Spaces)"),
-      style = "text-align: center; color: #2c3e50; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-top: 0;"
+      # Apply the border and centering to this wrapper
+      style = "text-align: center; color: #2c3e50; border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-top: 0; margin-bottom: 15px;",
+      
+      # Line 1: Static Title
+      h5("City Report", style = "margin: 0; font-weight: bold; color: inherit;"),
+      
+      # Line 2: Dynamic City Name (Rendered in Server)
+      uiOutput(ns("city_header_lbl"))
     ),
+    # -----------------------------------
+    
     div(
       id = "ndvi_info",
       tags$b("Greenness Level:"),
-      uiOutput(ns("ndvi_comp"))
+      uiOutput(ns("ndvi_comp"), container = tags$span)
     ),
     div(
       id = "ls_info",
       tags$b("Lives Saved:"),
-      uiOutput(ns("ls_comp"))
+      uiOutput(ns("ls_comp"), container = tags$span)
     ),
     div(
       id = "stroke_info",
       tags$b("Stroke Cases Prevented:"),
-      uiOutput(ns("scp_comp"))
+      uiOutput(ns("scp_comp"), container = tags$span)
     ),
     div(
       id = "deme_info",
       tags$b("Dementia Cases Prevented:"),
-      uiOutput(ns("dcp_comp"))
+      uiOutput(ns("dcp_comp"), container = tags$span)
     ),
-    br(), # Add a little space before the notes
+    br(), 
     div(
       style = "border-top: 1px solid #ccc; padding-top: 10px; font-size: 0.8em; color: #666; font-style: italic; line-height: 1.3;",
       p("* All health metrics are reported as rates per 100,000 population.", style = "margin-bottom: 5px;"),
@@ -50,6 +56,12 @@ cityInfoServer <- function(id, cityDF, selected_city) {
       cityDF |> dplyr::filter(fullCity == selected_city())
     })
     
+    # Header Render
+    output$city_header_lbl <- renderUI({
+      req(selected_city())
+      h5(selected_city(), style = "margin: 5px 0 0 0; font-weight: bold; color: inherit;")
+    })
+    
     # Calculate National Averages dynamically
     nat_stats <- list(
       meanNDVI = abs(round(mean(cityDF$meanNDVI, na.rm = TRUE),2)),
@@ -58,30 +70,33 @@ cityInfoServer <- function(id, cityDF, selected_city) {
       ls_Dementia_Rate = abs(round(mean(cityDF$ls_Dementia_Rate, na.rm = TRUE), 0))
     )
     
-    # Helper function to format the two lines consistentluy
-    render_comparison <- function(city_name, city_val, nat_val, suffix = "") {
+    # --- UPDATED HELPER FUNCTION ---
+    # Removed all inline color/font sizes. 
+    # It now relies entirely on the CSS to match the title style.
+    render_comparison <- function(city_val, nat_val, suffix = "") {
       HTML(paste0(
-        # Line 1: The Selected City
-        "<div style='margin-top: 4px; font-weight: 500; color: #1E4D2B;'>", 
-        city_name, ": ", city_val, suffix,
-        "</div>",
+        # Line 1: City Value 
+        # (CSS class .info-box span.shiny-html-output handles the bold/color)
+        "<span>", 
+        city_val, suffix,
+        "</span>",
         
-        # Line 2: The 200 Cities Average (Slightly lighter text)
-        "<div style='margin-bottom: 12px; font-size: 0.9em; color: #666;'>",
+        # Line 2: Average
+        "<div style='margin-top: 2px; margin-bottom: 12px; font-size: 0.9em; color: #666;'>",
         "200 Cities Average: ", nat_val, suffix,
         "</div>"
       ))
     }
+    # -------------------------------
     
     output$ndvi_comp <- renderUI({
       nat_val <- round(nat_stats$meanNDVI, 2)
       
       if (selected_city() != "") {
         city_val <- round(selectedData()$meanNDVI, 2)
-        render_comparison(selectedData()$fullCity, city_val, nat_val)
+        render_comparison(city_val, nat_val)
       } else {
-        # Fallback if no city selected
-        HTML(paste0("<div style='margin-bottom: 12px; color: #666;'>200 Cities Average: ", nat_val, "</div>"))
+        HTML(paste0("<span>--</span><div style='margin-bottom: 12px; color: #666;'>200 Cities Average: ", nat_val, "</div>"))
       }
     })
     
@@ -90,9 +105,9 @@ cityInfoServer <- function(id, cityDF, selected_city) {
       
       if (selected_city() != "") {
         city_val <- abs(round(selectedData()$ls_Mortality_Rate, 0))
-        render_comparison(selectedData()$fullCity, city_val, nat_val)
+        render_comparison(city_val, nat_val)
       } else {
-        HTML(paste0("<div style='margin-bottom: 12px; color: #666;'>200 Cities Average: ", nat_val, "</div>"))
+        HTML(paste0("<span>--</span><div style='margin-bottom: 12px; color: #666;'>200 Cities Average: ", nat_val, "</div>"))
       }
     })
     
@@ -101,9 +116,9 @@ cityInfoServer <- function(id, cityDF, selected_city) {
       
       if (selected_city() != "") {
         city_val <- abs(round(selectedData()$ls_Stroke_Rate, 0))
-        render_comparison(selectedData()$fullCity, city_val, nat_val)
+        render_comparison(city_val, nat_val)
       } else {
-        HTML(paste0("<div style='margin-bottom: 12px; color: #666;'>200 Cities Average: ", nat_val, "</div>"))
+        HTML(paste0("<span>--</span><div style='margin-bottom: 12px; color: #666;'>200 Cities Average: ", nat_val, "</div>"))
       }
     })
     
@@ -112,9 +127,9 @@ cityInfoServer <- function(id, cityDF, selected_city) {
       
       if (selected_city() != "") {
         city_val <- abs(round(selectedData()$ls_Dementia_Rate, 0))
-        render_comparison(selectedData()$fullCity, city_val, nat_val)
+        render_comparison(city_val, nat_val)
       } else {
-        HTML(paste0("<div style='margin-bottom: 12px; color: #666;'>200 Cities Average: ", nat_val, "</div>"))
+        HTML(paste0("<span>--</span><div style='margin-bottom: 12px; color: #666;'>200 Cities Average: ", nat_val, "</div>"))
       }
     })
   })

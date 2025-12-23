@@ -42,22 +42,42 @@ ui <- fluidPage(
     primary = "#1E4D2B",
     secondary = "#558B6E"
   ),
-  # --- Custom CSS for banners and layout ---
   includeCSS("www/styles.css"),
-
+  
   # page 1  -----------------------------------------------------------------
   navset_card_pill(
     id = "navbar",
+    
+    # --- UPDATED TITLE SECTION ---
     title = div(
-      img(src = "CSU-Symbol-r-K.png",style = "height: 100px; width: auto;" ),
-      tags$span(
-        "JustGreen",
-        style = "font-size: 24px; font-weight: bold; margin-left: 10px;"
+      style = "display: flex; align-items: center;", 
+      
+      # 1. Logo
+      img(src = "CSU-Symbol-r-K.png", style = "height: 80px; width: auto; margin-right: 15px;"),
+      
+      # 2. Text Block
+      div(
+        style = "display: flex; flex-direction: column; justify-content: center;",
+        
+        # Main Title (Changed color to Dark Grey)
+        tags$span(
+          "JustGreen",
+          class = "app-main-title"
+          ),
+        
+        # Subtitle (Reduced size)
+        tags$span(
+          "The health impacts of green spaces on the 200",
+          tags$br(),
+          "most populated cities in the USA",
+          class = "app-subtitle"
+          )
       )
     ),
-
+    # -----------------------------
+    
     nav_panel(
-      title = "Country Overview",
+      title = "200 City Overview",
       layout_sidebar(
         sidebar = sidebar(
           width = "30%",
@@ -79,16 +99,13 @@ ui <- fluidPage(
               "Dementia Cases Prevented"
             )
           ),
-          # City info module UI
           cityInfoUI("cityInfo"),
-          # Gauge module UI
           gaugeUI("gauge")
         ),
-        # Map module UI
         mapUI("map")
       )
     ),
-
+    
     # page 2 ------------------------------------------------------------------
     nav_panel(
       title = "City Review",
@@ -114,17 +131,14 @@ ui <- fluidPage(
               "Social Vulnerability (RPL)"
             )
           ),
-          # Tract info module UI
           tractInfoUI("tractInfo"),
-          
-          tags$hr(), # Optional: Visual separator
+          tags$hr(), 
           downloadButton("downloadReport", "Download Report", class = "btn-primary w-100")
         ),
-        # Tract map module UI
         tractMapUI("tractMap")
       )
     ),
-
+    
     # page 3 ------------------------------------------------------------------
     nav_panel(
       title = "About",
@@ -138,7 +152,7 @@ server <- function(input, output, session) {
   # Shared reactive value for selected city across both pages
   selected_city <- reactiveVal("")
 
-  # Page 1 - Country Overview ------------------------------------------------
+  # Page 1 - 200 City Overview ------------------------------------------------
 
   # Update selected city from input
   observeEvent(input$citySelect, {

@@ -1,24 +1,25 @@
 # Gauge Module UI
-# Gauge Module UI
 gaugeUI <- function(id) {
   ns <- NS(id)
   
-  card(
-    id = "gauge_card",
-    style = "max-height: 350px; overflow-y: auto;",
+  # Use 'info-box' to match the background color
+  div(
+    class = "info-box",
     
-    card_body(
-      plotlyOutput(ns("gauge_chart"), height = "120px"),
-      uiOutput(ns("gaugeText"))
+    # 1. The Chart Container (Centered)
+    div(
+      style = "display: flex; justify-content: center; align-items: center; min-height: 120px;",
+      plotlyOutput(ns("gauge_chart"), height = "100px", width = "95%")
     ),
     
-    # Updated: Removed inline styles so CSS #gaugeHeader controls the look
+    # 2. The Description Text (Styled like the city box footnotes)
     div(
-      id = "gaugeHeader",
-      uiOutput(ns("metric_desc")) 
+      style = "border-top: 1px solid #ccc; padding-top: 10px; margin-top: 10px; font-size: 0.8em; color: #666; font-style: italic; line-height: 1.3;",
+      uiOutput(ns("metric_desc"))
     )
   )
 }
+
 # Gauge Module Server
 gaugeServer <- function(id, cityDF, cityGPKG, selected_city, map_selector) {
   moduleServer(id, function(input, output, session) {
@@ -28,23 +29,32 @@ gaugeServer <- function(id, cityDF, cityGPKG, selected_city, map_selector) {
       cityGPKG |> as.data.frame() |> dplyr::filter(fullCity == selected_city())
     })
     
-    # Renamed this to be more generic since it holds full sentences now
-    metric_desc_reactive <- reactiveVal("This gauge shows the average vegetation density.")
+    # Define text descriptions for each metric
+    # (We re-define these here to pass them to the UI)
+    get_desc <- function(metric) {
+      switch(
+        metric,
+        "Current Vegetation Levels" = "This measure (NDVI) indicates the density and health of vegetation. Higher values represent greener, more vegetated urban areas.",
+        "Lives Saved" = "Estimated annual reduction in all-cause mortality per 100,000 residents attributed to the presence of urban green spaces.",
+        "Stroke Cases Prevented" = "The estimated number of stroke cases prevented annually per 100,000 people due to current greenness levels.",
+        "Dementia Cases Prevented" = "The estimated reduction in new dementia cases per 100,000 people linked to exposure to green spaces.",
+        "This compares the selected area against the National Average." # Fallback
+      )
+    }
     
+    # Render the Description
     output$metric_desc <- renderUI({
-      metric_desc_reactive()
+      req(map_selector())
+      if (is.null(selected_city()) || selected_city() == "") {
+        "This compares the selected area against the National Average for Greenness (NDVI)."
+      } else {
+        get_desc(map_selector())
+      }
     })
     
     output$gauge_chart <- renderPlotly({
       if (is.null(selected_city()) || selected_city() == "") {
         # Default / National Average View
-        output$gaugeText <- renderUI({
-          p(style = "text-align: center;", "Low greenness → High greenness")
-        })
-        
-        # Update description for the default view
-        metric_desc_reactive("This compares the selected area against the National Average for Greenness (NDVI).")
-        
         selectedRate <- round(mean(cityGPKG$meanNDVI, na.rm = TRUE), 2)
         valueRange <- round(range(cityGPKG$meanNDVI), 2)
         current_pal <- RColorBrewer::brewer.pal(n = 8, name = "BuGn")
@@ -54,59 +64,21 @@ gaugeServer <- function(id, cityDF, cityGPKG, selected_city, map_selector) {
           valueRange = valueRange,
           colorPalette = current_pal,
           title = "National Average",
-          height = 120
+          height = 100
         )
       } else {
         # Dynamic View based on Map Selector
         palette_config <- switch(
           map_selector(),
-          "Current Vegetation Levels" = list(
-            pal = "BuGn",
-            col = "meanNDVI",
-            text = "Low greenness → High greenness",
-            title = "Greenness level (NDVI)",
-            # Added description field
-            desc = "This measure (NDVI) indicates the density and health of vegetation. Higher values represent greener, more vegetated urban areas."
-          ),
-          "Lives Saved" = list(
-            pal = "PuBuGn",
-            col = "ls_Mortality_Rate",
-            text = "Fewer lives → More lives saved",
-            title = "Lives Saved per 100,000",
-            desc = "Estimated annual reduction in all-cause mortality per 100,000 residents attributed to the presence of urban green spaces."
-          ),
-          "Stroke Cases Prevented" = list(
-            pal = "BuPu",
-            col = "ls_Stroke_Rate",
-            text = "Fewer cases → More cases prevented",
-            title = "Stroke Cases Prevented per 100,000",
-            desc = "The estimated number of stroke cases prevented annually per 100,000 people due to current greenness levels."
-          ),
-          "Dementia Cases Prevented" = list(
-            pal = "OrRd",
-            col = "ls_Dementia_Rate",
-            text = "Fewer cases → More cases prevented",
-            title = "Dementia Cases Prevented per 100,000",
-            desc = "The estimated reduction in new dementia cases per 100,000 people linked to exposure to green spaces."
-          )
+          "Current Vegetation Levels" = list(pal = "BuGn", col = "meanNDVI"),
+          "Lives Saved" = list(pal = "PuBuGn", col = "ls_Mortality_Rate"),
+          "Stroke Cases Prevented" = list(pal = "BuPu", col = "ls_Stroke_Rate"),
+          "Dementia Cases Prevented" = list(pal = "OrRd", col = "ls_Dementia_Rate")
         )
         
-        # Update the description text
-        metric_desc_reactive(palette_config$desc)
-        
-        output$gaugeText <- renderUI({
-          p(style = "text-align: center; font-size: 0.8em; color: #666;", palette_config$text)
-        })
-        
-        current_pal <- RColorBrewer::brewer.pal(
-          n = 8,
-          name = palette_config$pal
-        )
+        current_pal <- RColorBrewer::brewer.pal(n = 8, name = palette_config$pal)
         selectedRate <- selectedData()[[palette_config$col]]
-        valueRange <- round(
-          range(as.data.frame(cityGPKG)[[palette_config$col]], na.rm = TRUE),
-          0
-        )
+        valueRange <- round(range(as.data.frame(cityGPKG)[[palette_config$col]], na.rm = TRUE), 0)
         
         gaugePlot(
           selectedRate = selectedRate,

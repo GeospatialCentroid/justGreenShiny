@@ -25,7 +25,6 @@ Key Changes:
   --color-csuGold : #C8C372;
 }
 
-
 /* 2. Apply global styles to the body */
 body {
   font-family: 'Poppins', Arial, sans-serif; /* Changed from Arial to Poppins */
@@ -46,15 +45,28 @@ body {
   /* Flexbox for alignment of Logo and Text */
   display: flex !important;
   align-items: center !important;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
 }
 
 /* SPECIFIC TARGETING FOR "JustGreen" TEXT SIZE & COLOR */
-.bslib-navs-card-title span {
+/* CHANGED: Now targets only elements with class 'app-main-title' */
+.bslib-navs-card-title .app-main-title {
   font-size: 80px !important;    /* Large Title */
   font-weight: 800 !important;   /* Extra Bold */
   color: #1E4D2B !important;     /* CSU Green */
-  margin-left: 15px;             /* Space from logo */
+  margin-left: 15px;             
   line-height: 1;
+}
+
+/* Subtitle: "The health impacts..." */
+.app-subtitle {
+  font-size: 18 !important;  /* Doubled size */
+  font-style: italic;          /* Italicized */
+  font-weight: normal;
+  color: #666;
+  margin-top: 5px;
+  margin-left: 18px;           /* Aligns nicely with the large title */
 }
 
 /* Alternative: target the card itself */
@@ -250,37 +262,7 @@ tbody tr:hover {
   border-bottom: 1px solid #E3EBE6; /* A subtle line to separate from map content */
 }
 
-/* --- Gauge Card Layout Adjustments --- */
-
-/* 1. Makes the gaugeHeader div display on a single line */
-/* --- Gauge Card Text Enhancements --- */
-
-#gaugeHeader {
-  /* 1. Create a container distinct from the white card background */
-  background-color: var(--color-mist); /* Uses your defined light sage/grey */
-  border-left: 5px solid var(--color-csuGold); /* Matches your H2 and Header styling */
-  border-radius: 0 4px 4px 0; /* Rounded corners on the right only */
-
-  /* 2. Positioning and Spacing */
-  margin: 10px 15px 15px 15px; /* Spacing away from the chart and card edges */
-  padding: 12px 15px; /* Internal breathing room for the text */
-  
-  /* 3. Typography for Clarity */
-  display: block; /* Ensure text wraps naturally as a paragraph */
-  text-align: left; /* Left alignment is faster to read for multi-line descriptions */
-  font-family: 'Poppins', sans-serif;
-  font-size: 0.9rem; /* Slightly smaller than body text to denote it as a caption */
-  line-height: 1.5;
-  color: var(--color-pine-dark); /* High contrast dark green text */
-}
-/* 2. Reduces the vertical whitespace inside the gauge card's body */
-#gauge_card .card-body {
-  padding-top: 5px;
-  padding-bottom: 5px;
-}
-
 /* --- Navbar Selector Visibility Enhancements (Green/Gold Pills) --- */
-
 /* Force styling on the new Pill Navs */
 .bslib-navs-card .nav-pills .nav-link {
   background-color: #f0ede6 !important; /* Beige background */
@@ -303,4 +285,50 @@ tbody tr:hover {
 .bslib-navs-card .nav-pills .nav-link:hover {
   background-color: #C8C372 !important; /* Gold hover */
   color: #1E4D2B !important;
+}
+
+/* --- Info Box Numbers (Match Title Style) --- */
+.info-box .shiny-html-output,
+.info-box span.shiny-html-output {
+  font-family: 'Poppins', sans-serif;
+  color: inherit !important;     /* Fix: Inherit dark grey instead of forcing Green */
+  font-weight: 700 !important;   /* Bold to match the headers */
+  font-size: 1em !important;     /* Same size as the headers */
+  margin-left: 5px;
+}
+
+/* Ensure the sub-text (Average comparison) remains smaller/grey */
+.info-box .shiny-html-output div[style*="color: #666"],
+.info-box div[style*="color: #666"] {
+  color: #666 !important;
+  font-weight: normal !important;
+  font-size: 0.9em !important;
+}
+
+/* --- Navbar Alignment Fix (Force Top Alignment) --- */
+
+/* 1. Force the main header container to align items to the top */
+.bslib-navs-card > .card-header {
+  align-items: flex-start !important; 
+  padding-top: 15px !important; 
+  padding-bottom: 15px !important;
+}
+
+/* 2. Target the navigation pills container specifically */
+.bslib-navs-card .nav-pills {
+  margin-top: 15px !important; /* Push down slightly to align text with "JustGreen" */
+  align-self: flex-start !important; /* Vital: Stops it from centering vertically */
+  margin-bottom: auto !important;    /* Ensures it stays at the top */
+}
+
+/* --- Fix for Select Input Dropdowns (Keeps them on top) --- */
+.selectize-dropdown {
+  z-index: 100000 !important; /* Forces the list to float above maps/cards */
+  font-family: 'Poppins', sans-serif; 
+  font-size: 0.95rem; 
+}
+
+.selectize-input {
+  font-family: 'Poppins', sans-serif;
+  box-shadow: none !important; 
 }

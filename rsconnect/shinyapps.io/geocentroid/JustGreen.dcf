@@ -5,6 +5,9 @@ account: geocentroid
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 15308008
-bundleId: 11131599
+bundleId: 11361850
 url: https://geocentroid.shinyapps.io/JustGreen/
 version: 1
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: preprocessing/data/allCities_2023_morDemStroke_with10percentAdjust.csv|preprocessing/data/top200Cities.gpkg|preprocessing/generateCTDataPerCity.R|preprocessing/standardize200Cities.R|temp/noco2020.R|test.R
