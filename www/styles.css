@@ -1,110 +1,334 @@
+/* --- 
+Altered styles to match the design language of style_docs.css
+Key Changes:
+- Font updated to 'Poppins'
+- Color palette switched to CSU Green and Gold
+- Panels and cards updated to a white background with box-shadow for depth
+- Added consistent styling for headings, links, and tables.
+- Navbar buttons (pills) styled as high-contrast Green/Gold buttons.
+--- */
 
-/*
-#F1F0E9 grey 
-#41644A light green 
-#0D4715 dark green 
-#E9762B orange 
-*/
+/* 1. Define the local font source (copied from style_docs.css) */
+@font-face {
+  font-family: 'Poppins';
+  src: url('Poppins-Regular.ttf') format('truetype'); /* Ensure this path is correct */
+  font-weight: normal;
+  font-style: normal;
+}
 
+:root {
+  --color-pine-dark: #0B2613;
+  --color-pine-base: #1E4D2B; /* Your Anchor */
+  --color-fern: #558B6E;
+  --color-sage: #88A096;
+  --color-mist: #E3EBE6;
+  --color-csuGold : #C8C372;
+}
 
-.body {
-  font-family: 'Arial', sans-serif;
-  padding: 0;
+/* 2. Apply global styles to the body */
+body {
+  font-family: 'Poppins', Arial, sans-serif; /* Changed from Arial to Poppins */
+  background-color: #f5f5f5; /* Light grey background from style_docs.css */
+  color: #333; /* Default dark text color */
+  line-height: 1.6;
   margin: 0;
+  padding: 0; /* Changed from original to allow full-width elements */
 }
 
+/* --- Styling for the navset card header (JustGreen title area) --- */
+.bslib-navs-card-title {
+  background-color: #f0ede6 !important; /* Light beige/off-white - same as card headers */
+  border-left: 5px solid #C8C372 !important; /* Gold/green vertical line */
+  padding: 0.75rem 1rem !important;
+  border-radius: 3px;
+  
+  /* Flexbox for alignment of Logo and Text */
+  display: flex !important;
+  align-items: center !important;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* SPECIFIC TARGETING FOR "JustGreen" TEXT SIZE & COLOR */
+/* CHANGED: Now targets only elements with class 'app-main-title' */
+.bslib-navs-card-title .app-main-title {
+  font-size: 80px !important;    /* Large Title */
+  font-weight: 800 !important;   /* Extra Bold */
+  color: #1E4D2B !important;     /* CSU Green */
+  margin-left: 15px;             
+  line-height: 1;
+}
+
+/* Subtitle: "The health impacts..." */
+.app-subtitle {
+  font-size: 18 !important;  /* Doubled size */
+  font-style: italic;          /* Italicized */
+  font-weight: normal;
+  color: #666;
+  margin-top: 5px;
+  margin-left: 18px;           /* Aligns nicely with the large title */
+}
+
+/* Alternative: target the card itself */
+.bslib-card > .card-header {
+  background-color: #f0ede6 !important;
+  border-left: 5px solid #C8C372 !important;
+}
+
+/* Ensure the nav tabs area also gets styled */
+.bslib-navs-card > .card-header {
+  background-color: #f0ede6 !important;
+  border-bottom: 2px solid #C8C372 !important;
+}
+
+/* --- Banners --- */
 .sidebar-title-banner {
-  background-color: #0D4715;
-  color: #F1F0E9;
-  padding: 15px;
+  background-color: #1E4D2B; /* CSU Green */
+  color: #FFFFFF; /* White text for contrast */
+  padding: 20px 30px;
   text-align: center;
-  font-size: 1.5em;
-  font-weight: bold;
-  border-radius: 5px;
+  font-size: 1.8em;
+  font-weight: 700; /* Bolder for emphasis */
   margin-bottom: 20px;
+  border-radius: 5px 5px 0 0; /* Match top-banner style */
 }
-.sidebar-bottom-banner {
-  background-color: #41644A80;
-  color: #F1F0E9;
-  padding: 5px;
+.sidebar-bottom-banner, .page-bottom-banner {
+  background-color: #1E4D2B; /* CSU Green, full opacity for readability */
+  color: #FFFFFF; /* White text */
+  padding: 10px;
   text-align: center;
-  font-size: 0.8em;
-  left: 15px;
-  right: 15px;
+  font-size: 0.9em;
   border-radius: 5px;
 }
-.page-bottom-banner {
-  background-color: #41644A80;
-  color: #F1F0E9;
-  padding: 5px;
-  text-align: center;
-  font-size: 0.8em;
-  left: 15px;
-  right: 15px;
-  border-radius: 5px;
+
+/* --- Panels and Cards --- */
+/* Applying the white panel with shadow effect from style_docs.css */
+.sidebar-panel, .bar-graph-panel, .card, .cardMap, .cardTable {
+  background-color: #ffffff; /* Changed from #F1F0E9 to white */
+  padding: 25px;
+  border-radius: 8px; /* Standardized border-radius */
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1); /* Soft shadow for depth */
+  border: 1px solid #E3EBE6; /* Kept subtle border */
 }
 
 .sidebar-panel {
-  background-color: #F1F0E9;
-  padding: 15px;
   position: relative;
   height: 100vh;
-  border-radius: 5px;
-  border-right: 5px solid #E9762B50; /* Example: 5px solid black border on the right */
+  padding: 0; /* Remove padding to allow banner to be full-width */
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  border-right: none;
 }
+
 .map-panel {
   padding: 0; /* Remove padding to make the map fill the container */
 }
-/* Ensure the map fills its container and takes full vertical space */
-#map1 {
-  height: 100vh !important;
-  border-radius: 5px;
-}
-#my_map2 {
-  height: 55vh !important;
-  border-radius: 5px;
-}
-.bar-graph-panel {
-  padding: 5px;
-  background-color: #F1F0E9;
-  border-radius: 5px;
-  margin-top: 5px;
-}
-.card {
-  background-color: #F1F0E9;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  box-shadow: 0 2px 4px rgba(0,0,0,.1);
-  padding: 15px;
-  margin-bottom: 20px;
-  height: 100vh !important;
-}
-.cardMap {
-  background-color: #F1F0E9;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  box-shadow: 0 2px 4px rgba(0,0,0,.1);
-  padding: 15px;
-  margin-bottom: 10px;
-  height: 60vh !important;
-}
-.cardTable {
-  background-color: #F1F0E9;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  box-shadow: 0 2px 4px rgba(0,0,0,.1);
-  padding: 15px;
-  margin-bottom: 10px;
-  height: 40vh !important;
+
+.card, .cardMap, .cardTable {
+  margin-bottom: 20px; /* Space out cards */
+  height: auto !important; /* Let content define height */
 }
 
+/* --- General Heading Styles (from style_docs.css) --- */
+h1, h2, h3, h4, h5, h6 {
+  color: #1E4D2B; /* CSU Green */
+  font-weight: 600;
+}
+
+h2 {
+  background-color: #f0f0f0; /* Light gray background for section headers */
+  border-left: 5px solid #C8C372; /* CSU Gold accent */
+  padding: 10px 15px;
+  margin-top: 40px; /* Space out sections */
+  font-size: 1.8em;
+  border-radius: 4px;
+}
+
+h3 {
+  font-size: 1.4em;
+}
+
+/* --- Interactive Elements --- */
 .btn-block {
-  background-color: #41644A;
-  color: #F1F0E9;
+  display: block;
+  width: 100%;
+  background-color: #1E4D2B; /* CSU Green */
+  color: #FFFFFF;
   border-radius: 5px;
+  padding: 10px 15px;
+  text-align: center;
+  border: 1px solid transparent;
+  font-size: 1em;
+  font-weight: 600;
 } 
 
-.btn-primary:hover {
-  color: #fff;
-  background-color: #41644A80;
-  border-color: #E9762B;
+/* Link Styles (from style_docs.css) */
+a {
+  color: #1E4D2B; /* CSU Green for consistency */
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* --- Additional Elements --- */
+.info-box {
+  border: 1px solid #E3EBE6;
+  border-radius: 5px;
+  padding: 15px;
+  margin-top: 15px;
+  margin-bottom: 15px;
+  background-color: #f9f9f9; /* Slightly off-white */
+}
+
+.tooltip-inner {
+  background-color: #1E4D2B; /* CSU Green to match your theme */
+  color: #FFF;
+  max-width: 500px;
+  text-align: left;
+  border-radius: 4px;
+}
+  
+.tooltip.right .tooltip-arrow { border-right-color: #1E4D2B;}
+
+/* Table Styling (from style_docs.css) */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+th, td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #E3EBE6;
+}
+
+thead th {
+  background-color: #f9f9f9;
+  font-weight: bold;
+  color: #333;
+  border-bottom: 2px solid #ccc;
+}
+
+tbody tr:hover {
+    background-color: #f5f5f5;
+}
+
+/* Style for the footer banner */
+.footer-banner {
+  position: relative;
+  width: 100%;
+  background-color: #1E4D2B; /* CSU Green */
+  color: white;
+  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+}
+
+/* Styling for the landing page header */
+#app_title {
+  background-color: #f0ede6; /* This is a light beige/off-white color from your image */
+  border-left: 5px solid #C8C372; /* This is the gold/green vertical line */
+  padding: 10px 15px; /* Adjust padding as needed for spacing around the text */
+  margin: 0; /* Remove default margins if they interfere */
+  display: inline-block; /* Allows padding and border to wrap text correctly */
+  color: #1E4D2B; /* Assuming your text color is a dark green */
+  font-size: 24px; /* Adjust font size as needed */
+  border-radius: 3px; /* Slightly rounded corners, if desired */
+}
+
+/* You might need to adjust the header's own padding/margin if it's wrapping the title */
+.main-header .logo {
+  padding: 0; /* Example adjustment */
+}
+.main-header .navbar {
+  margin-left: 0; /* Example adjustment */
+}
+
+
+/* --- Styling for the map card header --- */
+.card-header {
+  background-color: #f0ede6; /* Light beige/off-white */
+  border-left: 5px solid #C8C372; /* Gold/green vertical line */
+  padding: 10px 15px; /* Adjust padding as needed */
+  color: #1E4D2B; /* Dark green text color */
+  font-family: 'Poppins', sans-serif; /* Use the same font as the body */
+  font-size: 1.4em; /* Adjust font size to be appropriate for a card title */
+  font-weight: 600; /* Make it bold */
+  border-bottom: 1px solid #E3EBE6; /* A subtle line to separate from map content */
+}
+
+/* --- Navbar Selector Visibility Enhancements (Green/Gold Pills) --- */
+/* Force styling on the new Pill Navs */
+.bslib-navs-card .nav-pills .nav-link {
+  background-color: #f0ede6 !important; /* Beige background */
+  color: #1E4D2B !important;            /* Green text */
+  border: 1px solid #C8C372 !important; /* Gold border */
+  font-weight: bold !important;
+  font-size: 1.2rem !important;         /* Larger text */
+  margin-right: 10px !important;        /* Space between buttons */
+  border-radius: 5px !important;        /* Slightly rounded buttons */
+}
+
+/* Active State (The Selected Button) */
+.bslib-navs-card .nav-pills .nav-link.active {
+  background-color: #1E4D2B !important; /* Green Background */
+  color: #C8C372 !important;              /* White text */
+  border-color: #1E4D2B !important;
+}
+
+/* Hover State */
+.bslib-navs-card .nav-pills .nav-link:hover {
+  background-color: #C8C372 !important; /* Gold hover */
+  color: #1E4D2B !important;
+}
+
+/* --- Info Box Numbers (Match Title Style) --- */
+.info-box .shiny-html-output,
+.info-box span.shiny-html-output {
+  font-family: 'Poppins', sans-serif;
+  color: inherit !important;     /* Fix: Inherit dark grey instead of forcing Green */
+  font-weight: 700 !important;   /* Bold to match the headers */
+  font-size: 1em !important;     /* Same size as the headers */
+  margin-left: 5px;
+}
+
+/* Ensure the sub-text (Average comparison) remains smaller/grey */
+.info-box .shiny-html-output div[style*="color: #666"],
+.info-box div[style*="color: #666"] {
+  color: #666 !important;
+  font-weight: normal !important;
+  font-size: 0.9em !important;
+}
+
+/* --- Navbar Alignment Fix (Force Top Alignment) --- */
+
+/* 1. Force the main header container to align items to the top */
+.bslib-navs-card > .card-header {
+  align-items: flex-start !important; 
+  padding-top: 15px !important; 
+  padding-bottom: 15px !important;
+}
+
+/* 2. Target the navigation pills container specifically */
+.bslib-navs-card .nav-pills {
+  margin-top: 15px !important; /* Push down slightly to align text with "JustGreen" */
+  align-self: flex-start !important; /* Vital: Stops it from centering vertically */
+  margin-bottom: auto !important;    /* Ensures it stays at the top */
+}
+
+/* --- Fix for Select Input Dropdowns (Keeps them on top) --- */
+.selectize-dropdown {
+  z-index: 100000 !important; /* Forces the list to float above maps/cards */
+  font-family: 'Poppins', sans-serif; 
+  font-size: 0.95rem; 
+}
+
+.selectize-input {
+  font-family: 'Poppins', sans-serif;
+  box-shadow: none !important; 
+}

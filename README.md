@@ -19,7 +19,19 @@ All data supporting the project is generated with the [justGreen](https://github
 
 Users will be able to export an HTML file which summarizes the results of their selected city. 
 
-# Initial design Sketch 
 
-~ 20250710 : will add 
+# change log 
+
+## upcoming 
+- change the layout to fluid page to support better moble visualization 
+- add legend to the  city map visualizations 
+- add contact information to the about pages 
+
+
+## completed
+**20250908** 
+- increase the size of the circles on city map 
+- add some supporting text to note rates on the UI 
+- add links and pages for census tract and about pages 
+
 
