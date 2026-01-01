@@ -1,0 +1,258 @@
+<div class="about-page">
+
+<style>
+.about-page {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  color: #333;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.about-page h2 {
+  color: #1a5c38;
+  border-bottom: 2px solid #1a5c38;
+  padding-bottom: 8px;
+  margin-top: 30px;
+}
+
+.about-page h3 {
+  color: #2d7a4d;
+  margin-top: 25px;
+}
+
+.about-page table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 15px 0;
+}
+
+.about-page th {
+  background-color: #1a5c38;
+  color: white;
+  padding: 10px;
+  text-align: left;
+}
+
+.about-page td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+.about-page tr:hover {
+  background-color: #f5f5f5;
+}
+
+.about-page .highlight-box {
+  background-color: #e8f5e9;
+  border-left: 4px solid #1a5c38;
+  padding: 15px;
+  margin: 20px 0;
+}
+
+.about-page ul {
+  margin: 10px 0;
+  padding-left: 25px;
+}
+
+.about-page li {
+  margin-bottom: 5px;
+}
+
+.about-page .question {
+  font-weight: 600;
+  color: #1a5c38;
+  margin-top: 20px;
+  margin-bottom: 5px;
+}
+
+.about-page .contact-box {
+  background-color: #f8f9fa;
+  border: 1px solid #ddd;
+  padding: 20px;
+  margin-top: 30px;
+  border-radius: 5px;
+}
+</style>
+
+<h2>What This Tool Does</h2>
+
+<p>JustGreen estimates how many lives are saved each year by parks, gardens, lawns, and other green spaces in 200 US cities. It also shows which neighborhoods have the least vegetation and the greatest health needs—information cities can use to invest more fairly.</p>
+
+<p>The tool answers three questions:</p>
+
+<ol>
+  <li>How many deaths, strokes, and dementia cases does current vegetation prevent?</li>
+  <li>How many more could be prevented if a city increased green cover by 10%?</li>
+  <li>Where should cities add vegetation to reach the most people and address inequities?</li>
+</ol>
+
+<h2>What We Measure</h2>
+
+<h3>NDVI (Greenness)</h3>
+
+<p>Greenness is measured using the Normalized Difference Vegetation Index (NDVI), which captures chlorophyll in living plants from satellite imagery. NDVI detects <strong>all vegetation</strong>:</p>
+
+<ul>
+  <li>Lawns and turf</li>
+  <li>Native grasses and prairie</li>
+  <li>Shrubs and ground cover</li>
+  <li>Gardens and landscaping</li>
+  <li>Green roofs</li>
+  <li>Trees and forest</li>
+</ul>
+
+<p>NDVI values range from 0 to 1. A commercial strip with scattered planters might score 0.3. A residential block with mature landscaping might score 0.6. A forested park might score 0.8.</p>
+
+<div class="highlight-box">
+  <strong>Why this matters:</strong> Health benefits come from overall green cover. A neighborhood with native prairie or dense shrubs provides the same NDVI benefit as one dominated by trees. In arid climates, native grasses and drought-tolerant plants are often more appropriate than water-intensive species.
+</div>
+
+<h3>Health estimates</h3>
+
+<p>The health outcomes in JustGreen—deaths prevented, stroke cases prevented, dementia cases prevented—are modeled estimates. They apply exposure-response relationships from published research (meta-analyses of 8+ million people) to each city's population and greenness levels.</p>
+
+<p>These are expected outcomes based on statistical associations, not confirmed counts. Think of them like weather forecasts: built on solid data, useful for planning, but not guarantees.</p>
+
+<h3>Social Vulnerability Index (SVI)</h3>
+
+<p>The CDC's Social Vulnerability Index identifies neighborhoods where residents face socioeconomic disadvantages—poverty, limited transportation, crowded housing, language barriers. In many cities, these same neighborhoods have less green space. JustGreen maps this overlap so cities can target investment where needs are greatest.</p>
+
+<h2>Using the Application</h2>
+
+<h3>200 City Overview</h3>
+
+<p>The national map shows greenness levels for all 200 cities. Use this page to see how your city compares to others and identify regional patterns.</p>
+
+<h3>City Review</h3>
+
+<p>Select a city to see greenness at the census tract level. Click any tract to view its NDVI, population, health outcomes, and SVI score. This reveals within-city disparities that aggregate statistics hide.</p>
+
+<p>Each city has a downloadable PDF report for sharing with officials, planners, or community groups.</p>
+
+<h3>City reports</h3>
+
+<p>The PDF reports include:</p>
+
+<ul>
+  <li>Current greenness level and national ranking</li>
+  <li>Annual health benefits from existing vegetation</li>
+  <li>Projected benefits from a 10% vegetation increase</li>
+  <li>Priority tracts for greening investment</li>
+  <li>Equity analysis by social vulnerability</li>
+  <li>Recommendations for officials, planners, and residents</li>
+</ul>
+
+<p>Reports are designed to be shared at council meetings, in grant applications, and in public comments on development projects.</p>
+
+<h2>Scientific Basis</h2>
+
+<p>JustGreen applies health impact assessment methods from peer-reviewed epidemiology. The underlying evidence:</p>
+
+<ul>
+  <li>Meta-analyses show approximately 4% lower mortality per 0.1-unit NDVI increase</li>
+  <li>Associations hold across populations in North America, Europe, and Asia</li>
+  <li>Proposed pathways include reduced air pollution, lower heat exposure, increased physical activity, and stress reduction</li>
+</ul>
+
+<h3>Data sources</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Data</th>
+      <th>Source</th>
+      <th>Resolution</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Vegetation</td>
+      <td>NASA Landsat</td>
+      <td>Block group</td>
+    </tr>
+    <tr>
+      <td>Population</td>
+      <td>US Census ACS</td>
+      <td>Census tract</td>
+    </tr>
+    <tr>
+      <td>Social Vulnerability</td>
+      <td>CDC SVI</td>
+      <td>Census tract</td>
+    </tr>
+    <tr>
+      <td>Mortality</td>
+      <td>CDC</td>
+      <td>County</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>All health metrics are rates per 100,000, enabling fair comparison across cities and neighborhoods of different sizes.</p>
+
+<h2>Limitations</h2>
+
+<p>These estimates have uncertainty. Users should know:</p>
+
+<ul>
+  <li><strong>Modeled, not observed.</strong> Health outcomes are projections based on statistical associations, not confirmed case counts.</li>
+  <li><strong>Residential exposure assumed.</strong> The model uses vegetation where people live. Actual exposure depends on workplaces, commuting, and outdoor time.</li>
+  <li><strong>Pooled effect sizes.</strong> The 4% mortality reduction per 0.1 NDVI comes from pooled studies. Local effects may differ.</li>
+  <li><strong>Linear scaling assumed.</strong> The 10% scenario assumes benefits scale proportionally. This may not hold at very high or low greenness levels.</li>
+  <li><strong>Snapshot data.</strong> NDVI reflects one point in time and may miss seasonal changes or recent development.</li>
+</ul>
+
+<p>These limitations do not undermine the tool's value for planning. The direction and approximate size of health benefits are well-established. Results inform resource allocation while acknowledging uncertainty.</p>
+
+<h2>Common Questions</h2>
+
+<p class="question">Will adding vegetation definitely save lives?</p>
+<p>The estimates rest on strong evidence linking green space to better health. They represent what we'd expect based on studying millions of people. Actual results depend on local factors. Use these numbers to justify investment, not as precise predictions.</p>
+
+<p class="question">My neighborhood looks green but shows low NDVI. Why?</p>
+<p>NDVI averages across an entire census tract. A street with nice landscaping but large parking lots and commercial buildings can still score low overall.</p>
+
+<p class="question">Are trees better than other plants?</p>
+<p>Not for NDVI. Native prairie, shrub cover, and lawns all register similarly. In water-limited regions, native grasses and drought-tolerant plants are more sustainable than trees—and provide equivalent health benefits.</p>
+
+<p class="question">Where can I find native plants for my region?</p>
+<p>Your local Cooperative Extension office, native plant society, or botanical garden can recommend species suited to local conditions.</p>
+
+<p class="question">How can I use this information?</p>
+<p>Download your city's report and share it with local officials. Reference specific tracts in public comments on development projects. Advocate for greening in underserved neighborhoods. Add native plants to your own property.</p>
+
+<h2>Why Native and Climate-Appropriate Plants?</h2>
+
+<p>JustGreen measures vegetation, not trees specifically. This distinction matters.</p>
+
+<p>In the arid West, the Great Plains, and other water-limited regions, trees are not the native vegetation. Planting them can mean high water consumption, introduction of non-native species, maintenance burdens communities cannot sustain, and disruption of ecosystems adapted to grassland or shrubland.</p>
+
+<p>Native grasses, drought-tolerant shrubs, and regionally appropriate ground covers provide the same NDVI benefit while requiring less water, supporting native pollinators and wildlife, adapting to local climate, and withstanding drought as conditions warm.</p>
+
+<p>When using JustGreen to plan greening efforts, favor plants suited to your region rather than assuming all vegetation means trees.</p>
+
+<h2>Development Team</h2>
+
+<p>JustGreen was built by the <strong>Rojas Lab</strong> and the <strong>Geospatial Centroid</strong> at Colorado State University.</p>
+
+<div class="contact-box">
+  <p><strong>Principal Investigator:</strong> David Rojas, PhD<br>
+  Associate Professor of Environmental Epidemiology</p>
+  <p><strong>Contact:</strong> <a href="mailto:david.rojas@colostate.edu">david.rojas@colostate.edu</a></p>
+</div>
+
+<h2>Citation</h2>
+
+<p>If you use JustGreen in research, planning documents, or advocacy, please cite:</p>
+
+<p><em>[Citation format to be added]</em></p>
+
+<p><strong>Original publication:</strong> <a href="#">[Link to be added]</a></p>
+
+<p style="text-align: center; margin-top: 40px; color: #666; font-size: 0.9em;">
+  © 2025 Colorado State University
+</p>
+
+</div>
