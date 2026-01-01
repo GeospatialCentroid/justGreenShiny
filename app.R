@@ -20,7 +20,9 @@ tractsDF <- healthData[[2]]
 
 # read in summary html data 
 citySummary <- readRDS("data/citySummary.rds")
-
+# temp export as csv for city and tract data 
+# readr::write_csv(cityDF, "cityHealth.csv")
+# readr::write_csv(tractsDF, "censusTractsHealth.csv")
 
 # cityGPKG <- sf::st_read("data/top200_simple.gpkg")
 # cityDF <- read.csv("data/top200.csv")
@@ -142,8 +144,8 @@ ui <- fluidPage(
     # page 3 ------------------------------------------------------------------
     nav_panel(
       title = "About",
-      p("About page content")
-    )
+      includeHTML("www/justgreen_about.html")
+      )
   )
 )
 
@@ -238,7 +240,7 @@ server <- function(input, output, session) {
     filename = function() {
       req(selected_city())
       clean_name <- gsub(" ", "_", selected_city())
-      paste0(clean_name, "_Report.html")
+      paste0(clean_name, "_Repor1t.html")
     },
     content = function(file) {
       req(selected_city(), selected_city() != "Select a city")
