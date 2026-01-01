@@ -20,7 +20,9 @@ tractsDF <- healthData[[2]]
 
 # read in summary html data 
 citySummary <- readRDS("data/citySummary.rds")
-
+# temp export as csv for city and tract data 
+# readr::write_csv(cityDF, "cityHealth.csv")
+# readr::write_csv(tractsDF, "censusTractsHealth.csv")
 
 # cityGPKG <- sf::st_read("data/top200_simple.gpkg")
 # cityDF <- read.csv("data/top200.csv")
