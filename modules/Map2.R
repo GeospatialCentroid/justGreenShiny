@@ -11,7 +11,7 @@ tractMapUI <- function(id) {
                   style = "font-size: 0.8em; font-weight: normal;", 
                   "Evaluation of current health benefits of vegetation on the census tracts within your selected city"
                 )),
-    leafletOutput(ns("tract_map"), height = "85vh"),
+    leafletOutput(ns("tract_map"), height = "55vh"),
     tags$div(
       class = "footer-banner",
       tags$img(src = "rojosLogo.png", height = "80px"),
@@ -55,8 +55,11 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsDF, tract_metric, 
       geoid  <- city_info$GEOID
       tracts <- allTracts[[geoid]]
       
+      # FIX: Add distinct() to ensure one row per GEOID
       ct_health <- tractsDF |>
-        dplyr::filter(GEOID %in% tracts$GEOID)
+        dplyr::filter(GEOID %in% tracts$GEOID) |>
+        dplyr::distinct(GEOID, .keep_all = TRUE) 
+      
       tracts <- tracts |>
         dplyr::left_join(y = ct_health, by = "GEOID")
       
@@ -67,12 +70,12 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsDF, tract_metric, 
     output$tract_map <- renderLeaflet({
       leaflet() |>
         addMapPane("borders", zIndex = 410) |> 
-        addProviderTiles(providers$CartoDB.Positron, group = "CartoDB") |>
-        addTiles(group = "OpenStreetMap") |>
-        addProviderTiles(providers$Esri.WorldImagery, group = "Esri Imagery") |>
+        addProviderTiles(providers$CartoDB.Positron, group = "Simple Map") |>
+        addTiles(group = "Street Map") |>
+        addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") |>
         setView(lng = -98.57, lat = 39.82, zoom = 4) |> 
         addLayersControl(
-          baseGroups = c("CartoDB", "OpenStreetMap", "Esri Imagery"),
+          baseGroups = c("Simple Map", "Street Map", "Satellite"),
           overlayGroups = c(data_layer_group, boundary_group), 
           options = layersControlOptions(collapsed = FALSE)
         )|>
@@ -96,21 +99,22 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsDF, tract_metric, 
       tract_sf <- tract_data()
       bounds <- sf::st_bbox(tract_sf)
       
+      # Define config for coloring (remains the same)
       metric_config <- switch(
         tract_metric(),
         "Current Vegetation Levels" = list(
-          palette = "BuGn",           
+          palette = "BuGn",            
           col = "meanNDVI",
           title = "Greenness level<br>(NDVI)",
           legend_type = "numeric",
-          decimals = 1  # Fixes 0.60000001 -> 0.6
+          decimals = 1
         ),
         "Lives Saved" = list(
           palette = "PuBuGn",
           col = "ls_Mortality_Rate",
           title = "Lives Saved<br>per 100,000",
           legend_type = "numeric",
-          decimals = 0  # Whole numbers (e.g., 500)
+          decimals = 0 
         ),
         "Stroke Cases Prevented" = list(
           palette = "BuPu",
@@ -130,7 +134,6 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsDF, tract_metric, 
           col = "RPL_THEMES",
           palette = "YlGnBu",
           title = "Social Vulnerability<br>Index",
-          popup_label = "SVI",
           domain = c(0, 1),
           legend_type = "qualitative"
         )
@@ -166,17 +169,24 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsDF, tract_metric, 
               bringToFront = FALSE 
             ),
             label = ~ paste("Tract:", GEOID),
-            popup = ~ paste(
-              "<b>Census Tract:</b>", GEOID, "<br>",
-              paste0("<b>", ifelse(!is.null(metric_config$popup_label), metric_config$popup_label, metric_config$title), ":</b> "),
-              round(tract_sf[[metric_config$col]], 3)
+            
+            # --- UPDATED POPUP SECTION ---
+            # This now displays all 5 metrics regardless of which one is selected
+            popup = ~ paste0(
+              # "<b>Census Tract:</b> ", GEOID, "<br>",
+              # "<hr style='margin: 5px 0;'>",
+              "<b>Greenness (NDVI):</b> ", round(meanNDVI, 3), "<br>",
+              "<b>Lives Saved:</b> ", round(ls_Mortality_Rate, 0), " <small>(per 100k)</small><br>",
+              "<b>Strokes Prevented:</b> ", round(ls_Stroke_Rate, 0), " <small>(per 100k)</small><br>",
+              "<b>Dementia Prevented:</b> ", round(ls_Dementia_Rate, 0), " <small>(per 100k)</small><br>",
+              "<b>Social Vulnerability:</b> ", round(RPL_THEMES, 2)
             )
+            # -----------------------------
           )
         
-        # --- LEGEND LOGIC ---
+        # --- LEGEND LOGIC (Remains the same) ---
         
         if (metric_config$legend_type == "qualitative") {
-          # SVI: Qualitative (High -> Low)
           svi_colors <- RColorBrewer::brewer.pal(5, "YlGnBu")
           
           proxy |> addLegend(
@@ -189,24 +199,16 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsDF, tract_metric, 
           )
           
         } else {
-          # Numeric Metrics
           vals <- data_vals[!is.na(data_vals)]
           
           if(length(vals) > 0) {
-            # 1. Create nice break points
             breaks <- pretty(vals, n = 5)
-            
-            # 2. CLAMP breaks for COLORS
             clamped_breaks <- pmax(val_rng[1], pmin(breaks, val_rng[2]))
-            
-            # 3. Get colors using clamped values
             break_colors <- pal(clamped_breaks)
             
-            # 4. Clean Labels using the 'decimals' setting
             dec <- if(!is.null(metric_config$decimals)) metric_config$decimals else 2
             clean_labels <- round(breaks, dec)
             
-            # 5. Reverse both so High Value is at top
             legend_colors <- rev(break_colors)
             legend_labels <- rev(clean_labels)
             

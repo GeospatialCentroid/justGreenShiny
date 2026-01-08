@@ -11,7 +11,7 @@ mapUI <- function(id) {
                   style = "font-size: 0.8em; font-weight: normal;", 
                   "Evaluation of current health benefits of vegetation on the 200 most populated cities in the United States"
                 )),
-    leafletOutput(ns("map"), height = "85vh"),
+    leafletOutput(ns("map"), height = "70vh"),
     tags$div(
       class = "footer-banner",
       tags$img(src = "rojosLogo.png", height = "80px"),
@@ -73,9 +73,9 @@ mapServer <- function(id, cityGPKG, cityCentroid, selected_city, map_selector) {
       leg_params <- get_legend_params(cityGPKG$meanNDVI, pal1, decimals = 1)
       
       leaflet() |>
-        addProviderTiles(providers$CartoDB.Positron, group = "CartoDB") |>
-        addTiles(group = "OpenStreetMap") |>
-        addProviderTiles(providers$Esri.WorldImagery, group = "Esri Imagery") |>
+        addProviderTiles(providers$CartoDB.Positron, group = "Simple Map") |>
+        addTiles(group = "Street Map") |>
+        addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") |>
         setView(lng = -99.9018, lat = 39.3812, zoom = 3) |>
         addCircleMarkers(
           data = cityCentroid,
@@ -100,7 +100,7 @@ mapServer <- function(id, cityGPKG, cityCentroid, selected_city, map_selector) {
           label = ~fullCity
         ) |>
         addLayersControl(
-          baseGroups = c("CartoDB", "OpenStreetMap", "Esri Imagery"),
+          baseGroups = c("Simple Map", "Street Map", "Satellite"),
           options = layersControlOptions(collapsed = FALSE)
         ) |>
         addLegend(
