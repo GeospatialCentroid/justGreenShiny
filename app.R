@@ -243,7 +243,7 @@ server <- function(input, output, session) {
     filename = function() {
       req(selected_city())
       clean_name <- gsub(" ", "_", selected_city())
-      paste0(clean_name, "_Repor1t.html")
+      paste0(clean_name, "_Report.html")
     },
     content = function(file) {
       req(selected_city(), selected_city() != "Select a city")
