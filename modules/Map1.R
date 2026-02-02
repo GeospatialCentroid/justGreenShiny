@@ -18,7 +18,7 @@ mapUI <- function(id) {
       tags$span(
         "Rojos Lab - Geospatial Centroid",
         tags$br(),
-        "Colorado State University © 2025"
+        "Colorado State University © 2026"
       ),
       tags$img(
         src = "centroid_white_gray_logo_CROPPED.png",

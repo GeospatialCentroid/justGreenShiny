@@ -11,14 +11,14 @@ tractMapUI <- function(id) {
                   style = "font-size: 0.8em; font-weight: normal;", 
                   "Evaluation of current health benefits of vegetation on the census tracts within your selected city"
                 )),
-    leafletOutput(ns("tract_map"), height = "55vh"),
+    withSpinner(leafletOutput(ns("tract_map"), height = "55vh"), type = 6, color = "#1E4D2B"),
     tags$div(
       class = "footer-banner",
       tags$img(src = "rojosLogo.png", height = "80px"),
       tags$span(
         "Rojos Lab - Geospatial Centroid",
         tags$br(),
-        "Colorado State University © 2025"
+        "Colorado State University © 2026"
       ),
       tags$img(
         src = "centroid_white_gray_logo_CROPPED.png",
@@ -48,6 +48,8 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsDF, tract_metric, 
     tract_data <- reactive({
       req(selected_city(), selected_city() != "")
       req(active_tab() == "City Review")
+      # Pauses for 1 second to let the spinner show
+      Sys.sleep(1) 
       
       allTracts <- readRDS("data/tractsGPKG.rds") 
       
@@ -68,6 +70,7 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsDF, tract_metric, 
     
     # 2. Initialize map
     output$tract_map <- renderLeaflet({
+      validate(need(selected_city() != "", "Please select a city from the sidebar to view tract details."))
       leaflet() |>
         addMapPane("borders", zIndex = 410) |> 
         addProviderTiles(providers$CartoDB.Positron, group = "Simple Map") |>
@@ -150,6 +153,8 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsDF, tract_metric, 
           domain = if(is.null(metric_config$domain)) val_rng else metric_config$domain,
           na.color = "transparent"
         )
+        # Clean up the title for the label (remove <br> tags)
+        clean_title <- gsub("<br>", " ", metric_config$title)
         
         proxy <- leafletProxy("tract_map") |>
           clearGroup(data_layer_group) |>
@@ -168,20 +173,40 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsDF, tract_metric, 
               fillOpacity = 0.9,
               bringToFront = FALSE 
             ),
-            label = ~ paste("Tract:", GEOID),
             
-            # --- UPDATED POPUP SECTION ---
-            # This now displays all 5 metrics regardless of which one is selected
+            # --- UPDATED HOVER LABEL (Population instead of ID) ---
+            label = ~ lapply(seq_len(nrow(tract_sf)), function(i) {
+              val <- tract_sf[[metric_config$col]][i]
+              pop_val <- tract_sf$over20[i] # Assumes 'over20' is in your data
+              
+              # Formatting logic
+              formatted_val <- if(metric_config$decimals == 0) {
+                format(round(val, 0), big.mark = ",")
+              } else {
+                round(val, metric_config$decimals)
+              }
+              
+              # Construct HTML Label
+              HTML(paste0(
+                "<div style='font-family: Poppins, sans-serif;'>",
+                "<b>", clean_title, ": </b>", formatted_val, "<br/>",
+                "<span style='font-size: 0.9em; color: #666;'>Population (20+): ", format(pop_val, big.mark = ","), "</span>",
+                "</div>"
+              ))
+            }),
+            # ------------------------------------------------------
+            
             popup = ~ paste0(
-              # "<b>Census Tract:</b> ", GEOID, "<br>",
-              # "<hr style='margin: 5px 0;'>",
+              # Keep the ID in the popup for the 1% of users (researchers) who might need it
+              "<b>Census Tract:</b> ", GEOID, "<br>",
+              "<hr style='margin: 5px 0;'>",
+              "<b>Population (20+):</b>", format(over20, big.mark = ","), "<br>",
               "<b>Greenness (NDVI):</b> ", round(meanNDVI, 3), "<br>",
               "<b>Lives Saved:</b> ", round(ls_Mortality_Rate, 0), " <small>(per 100k)</small><br>",
               "<b>Strokes Prevented:</b> ", round(ls_Stroke_Rate, 0), " <small>(per 100k)</small><br>",
               "<b>Dementia Prevented:</b> ", round(ls_Dementia_Rate, 0), " <small>(per 100k)</small><br>",
               "<b>Social Vulnerability:</b> ", round(RPL_THEMES, 2)
             )
-            # -----------------------------
           )
         
         # --- LEGEND LOGIC (Remains the same) ---

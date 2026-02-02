@@ -7,6 +7,7 @@ library(DT)
 library(shinyBS)
 library(RColorBrewer)
 library(bslib)
+library(shinycssloaders)
 
 # Parameters 
 zoom_switch <- 9
@@ -44,8 +45,24 @@ ui <- fluidPage(
     primary = "#1E4D2B",
     secondary = "#558B6E"
   ),
+  # non R based viz elements 
   tags$head(
-    tags$link(rel = "shortcut icon", href = "ramCSU.ico")
+    # this is a icon for the website tab
+    tags$link(rel = "shortcut icon", href = "ramCSU.ico"),
+    # this add hover over text to the 
+    tags$script("
+      $(document).ready(function() {
+        // Wait for element to exist, then add title
+        var observer = new MutationObserver(function(mutations) {
+          var toggle = document.querySelector('.collapse-toggle');
+          if (toggle) {
+             toggle.setAttribute('title', 'Click to expand/collapse the controls');
+             observer.disconnect();
+          }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+      });
+    ")
   ),
   includeCSS("www/styles.css"),
   
@@ -66,9 +83,7 @@ ui <- fluidPage(
       
       # Subtitle
       tags$span(
-        "The health impacts of green spaces on the 200",
-        tags$br(),
-        "most populated cities in the USA",
+        "The health impacts of green spaces on the 200 most populated cities in the USA",
         class = "app-subtitle"
       )
     ),
@@ -140,15 +155,8 @@ ui <- fluidPage(
     # page 3 ------------------------------------------------------------------
     nav_panel(
       title = "About",
-      includeHTML("www/justgreen_about.html")
-    ),
-    
-    # --- MOVED LOGO TO RIGHT SIDE ---
-    nav_spacer(), # This pushes the following items to the far right
-    
-    nav_item(
-      img(src = "CSU-Symbol-r-K.png", style = "height: 80px; width: auto; padding-left: 15px;")
-    )
+      includeMarkdown("www/justgreen_about.md")
+      )
   )
 )
 
