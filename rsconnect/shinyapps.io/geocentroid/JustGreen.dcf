@@ -1,12 +1,13 @@
 name: JustGreen
-title: justGreenShiny
+title: JustGreen
 username: geocentroid
 account: geocentroid
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 15308008
-bundleId: 11419313
+bundleId: 11685539
 url: https://geocentroid.shinyapps.io/JustGreen/
 version: 1
 asMultiple: FALSE
 asStatic: FALSE
+ignoredFiles: update.md

@@ -8,6 +8,7 @@ library(shinyBS)
 library(RColorBrewer)
 library(bslib)
 library(shinycssloaders)
+library(markdown)
 
 # Parameters 
 zoom_switch <- 9

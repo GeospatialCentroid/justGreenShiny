@@ -76,7 +76,7 @@ JustGreen applies health impact assessment methods from peer-reviewed epidemiolo
 
 | Data | Source | Resolution |
 | :--- | :--- | :--- |
-| Vegetation | NASA Landsat | Block group |
+| Vegetation | ESA Sentinel-2 | Continuous Area |
 | Population | US Census ACS | Census tract |
 | Social Vulnerability | CDC SVI | Census tract |
 | Mortality | CDC | County |

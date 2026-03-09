@@ -138,7 +138,8 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsDF, tract_metric, 
           palette = "YlGnBu",
           title = "Social Vulnerability<br>Index",
           domain = c(0, 1),
-          legend_type = "qualitative"
+          legend_type = "qualitative",
+          decimals = 2
         )
       )
       
