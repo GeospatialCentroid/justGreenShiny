@@ -7,6 +7,8 @@ library(DT)
 library(shinyBS)
 library(RColorBrewer)
 library(bslib)
+library(shinycssloaders)
+library(markdown)
 
 # Parameters 
 zoom_switch <- 9
@@ -44,36 +46,46 @@ ui <- fluidPage(
     primary = "#1E4D2B",
     secondary = "#558B6E"
   ),
+  # non R based viz elements 
+  tags$head(
+    # this is a icon for the website tab
+    tags$link(rel = "shortcut icon", href = "ramCSU.ico"),
+    # this add hover over text to the 
+    tags$script("
+      $(document).ready(function() {
+        // Wait for element to exist, then add title
+        var observer = new MutationObserver(function(mutations) {
+          var toggle = document.querySelector('.collapse-toggle');
+          if (toggle) {
+             toggle.setAttribute('title', 'Click to expand/collapse the controls');
+             observer.disconnect();
+          }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+      });
+    ")
+  ),
   includeCSS("www/styles.css"),
   
   # page 1  -----------------------------------------------------------------
   navset_card_pill(
     id = "navbar",
     
-    # --- UPDATED TITLE SECTION ---
+    # --- UPDATED TITLE SECTION (Text Only) ---
+    # We removed the flex container wrapper and the image here
     title = div(
-      style = "display: flex; align-items: center;", 
+      style = "display: flex; flex-direction: column; justify-content: center;",
       
-      # 1. Logo
-      img(src = "CSU-Symbol-r-K.png", style = "height: 80px; width: auto; margin-right: 15px;"),
+      # Main Title
+      tags$span(
+        "JustGreen",
+        class = "app-main-title"
+      ),
       
-      # 2. Text Block
-      div(
-        style = "display: flex; flex-direction: column; justify-content: center;",
-        
-        # Main Title (Changed color to Dark Grey)
-        tags$span(
-          "JustGreen",
-          class = "app-main-title"
-          ),
-        
-        # Subtitle (Reduced size)
-        tags$span(
-          "The health impacts of green spaces on the 200",
-          tags$br(),
-          "most populated cities in the USA",
-          class = "app-subtitle"
-          )
+      # Subtitle
+      tags$span(
+        "The health impacts of green spaces on the 200 most populated cities in the USA",
+        class = "app-subtitle"
       )
     ),
     # -----------------------------
@@ -85,7 +97,7 @@ ui <- fluidPage(
           width = "30%",
           selectInput(
             inputId = "citySelect",
-            label = "Select a city",
+            label = "Select a city from the drop down to begin",
             choices = c(
               "Select a city",
               sort(cityDF$fullCity)
@@ -93,7 +105,7 @@ ui <- fluidPage(
           ),
           selectInput(
             inputId = "mapSelector",
-            label = "Map Display Options",
+            label = "Use this to change what health metrics is displayed on the map",
             choices = c(
               "Current Vegetation Levels",
               "Lives Saved",
@@ -102,7 +114,10 @@ ui <- fluidPage(
             )
           ),
           cityInfoUI("cityInfo"),
-          gaugeUI("gauge")
+          gaugeUI("gauge"),
+          tags$hr(),
+          actionButton("navToCityReview", "Go to City Review", class = "btn-primary w-100 mb-3"),
+          downloadButton("downloadReport1", "Download Report", class = "btn-primary w-100")
         ),
         mapUI("map")
       )
@@ -116,7 +131,7 @@ ui <- fluidPage(
           width = "30%",
           selectInput(
             inputId = "citySelect2",
-            label = "Select a city",
+            label = "Change your city of interest by typing or selecting a new location",
             choices = c(
               "Select a city",
               cityDF$fullCity
@@ -124,7 +139,7 @@ ui <- fluidPage(
           ),
           selectInput(
             inputId = "tractMetric",
-            label = "Display Metric",
+            label = "Use this to change what health metrics is displayed on the map",
             choices = c(
               "Current Vegetation Levels",
               "Lives Saved",
@@ -144,7 +159,7 @@ ui <- fluidPage(
     # page 3 ------------------------------------------------------------------
     nav_panel(
       title = "About",
-      includeHTML("www/justgreen_about.html")
+      includeMarkdown("www/justgreen_about.md")
       )
   )
 )
@@ -195,6 +210,11 @@ server <- function(input, output, session) {
     map_selector = reactive(input$mapSelector)
   )
 
+  # Navigate to City Review page
+  observeEvent(input$navToCityReview, {
+    nav_select("navbar", "City Review")
+  })
+
   # Page 2 - City Review ------------------------------------------
 
   selected_tract <- reactiveVal("")
@@ -236,11 +256,11 @@ server <- function(input, output, session) {
     tract_data = tract_map_return$tract_data
   )
   # --- UPDATED DOWNLOAD HANDLER ---
-  output$downloadReport <- downloadHandler(
+  report_download_handler <- downloadHandler(
     filename = function() {
       req(selected_city())
       clean_name <- gsub(" ", "_", selected_city())
-      paste0(clean_name, "_Repor1t.html")
+      paste0(clean_name, "_Report.html")
     },
     content = function(file) {
       req(selected_city(), selected_city() != "Select a city")
@@ -283,6 +303,9 @@ server <- function(input, output, session) {
       ) # End withProgress
     }
   )
+  
+  output$downloadReport <- report_download_handler
+  output$downloadReport1 <- report_download_handler
   
 }
 

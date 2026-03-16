@@ -11,14 +11,14 @@ tractMapUI <- function(id) {
                   style = "font-size: 0.8em; font-weight: normal;", 
                   "Evaluation of current health benefits of vegetation on the census tracts within your selected city"
                 )),
-    leafletOutput(ns("tract_map"), height = "85vh"),
+    withSpinner(leafletOutput(ns("tract_map"), height = "55vh"), type = 6, color = "#1E4D2B"),
     tags$div(
       class = "footer-banner",
       tags$img(src = "rojosLogo.png", height = "80px"),
       tags$span(
         "Rojos Lab - Geospatial Centroid",
         tags$br(),
-        "Colorado State University © 2025"
+        "Colorado State University © 2026"
       ),
       tags$img(
         src = "centroid_white_gray_logo_CROPPED.png",
@@ -48,6 +48,8 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsDF, tract_metric, 
     tract_data <- reactive({
       req(selected_city(), selected_city() != "")
       req(active_tab() == "City Review")
+      # Pauses for 1 second to let the spinner show
+      Sys.sleep(1) 
       
       allTracts <- readRDS("data/tractsGPKG.rds") 
       
@@ -55,8 +57,11 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsDF, tract_metric, 
       geoid  <- city_info$GEOID
       tracts <- allTracts[[geoid]]
       
+      # FIX: Add distinct() to ensure one row per GEOID
       ct_health <- tractsDF |>
-        dplyr::filter(GEOID %in% tracts$GEOID)
+        dplyr::filter(GEOID %in% tracts$GEOID) |>
+        dplyr::distinct(GEOID, .keep_all = TRUE) 
+      
       tracts <- tracts |>
         dplyr::left_join(y = ct_health, by = "GEOID")
       
@@ -65,14 +70,15 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsDF, tract_metric, 
     
     # 2. Initialize map
     output$tract_map <- renderLeaflet({
+      validate(need(selected_city() != "", "Please select a city from the sidebar to view tract details."))
       leaflet() |>
         addMapPane("borders", zIndex = 410) |> 
-        addProviderTiles(providers$CartoDB.Positron, group = "CartoDB") |>
-        addTiles(group = "OpenStreetMap") |>
-        addProviderTiles(providers$Esri.WorldImagery, group = "Esri Imagery") |>
+        addProviderTiles(providers$CartoDB.Positron, group = "Simple Map") |>
+        addTiles(group = "Street Map") |>
+        addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") |>
         setView(lng = -98.57, lat = 39.82, zoom = 4) |> 
         addLayersControl(
-          baseGroups = c("CartoDB", "OpenStreetMap", "Esri Imagery"),
+          baseGroups = c("Simple Map", "Street Map", "Satellite"),
           overlayGroups = c(data_layer_group, boundary_group), 
           options = layersControlOptions(collapsed = FALSE)
         )|>
@@ -96,21 +102,22 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsDF, tract_metric, 
       tract_sf <- tract_data()
       bounds <- sf::st_bbox(tract_sf)
       
+      # Define config for coloring (remains the same)
       metric_config <- switch(
         tract_metric(),
         "Current Vegetation Levels" = list(
-          palette = "BuGn",           
+          palette = "BuGn",            
           col = "meanNDVI",
           title = "Greenness level<br>(NDVI)",
           legend_type = "numeric",
-          decimals = 1  # Fixes 0.60000001 -> 0.6
+          decimals = 1
         ),
         "Lives Saved" = list(
           palette = "PuBuGn",
           col = "ls_Mortality_Rate",
           title = "Lives Saved<br>per 100,000",
           legend_type = "numeric",
-          decimals = 0  # Whole numbers (e.g., 500)
+          decimals = 0 
         ),
         "Stroke Cases Prevented" = list(
           palette = "BuPu",
@@ -130,9 +137,9 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsDF, tract_metric, 
           col = "RPL_THEMES",
           palette = "YlGnBu",
           title = "Social Vulnerability<br>Index",
-          popup_label = "SVI",
           domain = c(0, 1),
-          legend_type = "qualitative"
+          legend_type = "qualitative",
+          decimals = 2
         )
       )
       
@@ -147,6 +154,8 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsDF, tract_metric, 
           domain = if(is.null(metric_config$domain)) val_rng else metric_config$domain,
           na.color = "transparent"
         )
+        # Clean up the title for the label (remove <br> tags)
+        clean_title <- gsub("<br>", " ", metric_config$title)
         
         proxy <- leafletProxy("tract_map") |>
           clearGroup(data_layer_group) |>
@@ -165,18 +174,45 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsDF, tract_metric, 
               fillOpacity = 0.9,
               bringToFront = FALSE 
             ),
-            label = ~ paste("Tract:", GEOID),
-            popup = ~ paste(
-              "<b>Census Tract:</b>", GEOID, "<br>",
-              paste0("<b>", ifelse(!is.null(metric_config$popup_label), metric_config$popup_label, metric_config$title), ":</b> "),
-              round(tract_sf[[metric_config$col]], 3)
+            
+            # --- UPDATED HOVER LABEL (Population instead of ID) ---
+            label = ~ lapply(seq_len(nrow(tract_sf)), function(i) {
+              val <- tract_sf[[metric_config$col]][i]
+              pop_val <- tract_sf$over20[i] # Assumes 'over20' is in your data
+              
+              # Formatting logic
+              formatted_val <- if(metric_config$decimals == 0) {
+                format(round(val, 0), big.mark = ",")
+              } else {
+                round(val, metric_config$decimals)
+              }
+              
+              # Construct HTML Label
+              HTML(paste0(
+                "<div style='font-family: Poppins, sans-serif;'>",
+                "<b>", clean_title, ": </b>", formatted_val, "<br/>",
+                "<span style='font-size: 0.9em; color: #666;'>Population (20+): ", format(pop_val, big.mark = ","), "</span>",
+                "</div>"
+              ))
+            }),
+            # ------------------------------------------------------
+            
+            popup = ~ paste0(
+              # Keep the ID in the popup for the 1% of users (researchers) who might need it
+              "<b>Census Tract:</b> ", GEOID, "<br>",
+              "<hr style='margin: 5px 0;'>",
+              "<b>Population (20+):</b>", format(over20, big.mark = ","), "<br>",
+              "<b>Greenness (NDVI):</b> ", round(meanNDVI, 3), "<br>",
+              "<b>Lives Saved:</b> ", round(ls_Mortality_Rate, 0), " <small>(per 100k)</small><br>",
+              "<b>Strokes Prevented:</b> ", round(ls_Stroke_Rate, 0), " <small>(per 100k)</small><br>",
+              "<b>Dementia Prevented:</b> ", round(ls_Dementia_Rate, 0), " <small>(per 100k)</small><br>",
+              "<b>Social Vulnerability:</b> ", round(RPL_THEMES, 2)
             )
           )
         
-        # --- LEGEND LOGIC ---
+        # --- LEGEND LOGIC (Remains the same) ---
         
         if (metric_config$legend_type == "qualitative") {
-          # SVI: Qualitative (High -> Low)
           svi_colors <- RColorBrewer::brewer.pal(5, "YlGnBu")
           
           proxy |> addLegend(
@@ -189,24 +225,16 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsDF, tract_metric, 
           )
           
         } else {
-          # Numeric Metrics
           vals <- data_vals[!is.na(data_vals)]
           
           if(length(vals) > 0) {
-            # 1. Create nice break points
             breaks <- pretty(vals, n = 5)
-            
-            # 2. CLAMP breaks for COLORS
             clamped_breaks <- pmax(val_rng[1], pmin(breaks, val_rng[2]))
-            
-            # 3. Get colors using clamped values
             break_colors <- pal(clamped_breaks)
             
-            # 4. Clean Labels using the 'decimals' setting
             dec <- if(!is.null(metric_config$decimals)) metric_config$decimals else 2
             clean_labels <- round(breaks, dec)
             
-            # 5. Reverse both so High Value is at top
             legend_colors <- rev(break_colors)
             legend_labels <- rev(clean_labels)
             

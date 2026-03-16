@@ -49,7 +49,7 @@ tractInfoUI <- function(id) {
     br(), 
     div(
       style = "border-top: 1px solid #ccc; padding-top: 10px; font-size: 0.8em; color: #666; font-style: italic; line-height: 1.3;",
-      p("* All health metrics are reported as rates per 100,000 population.", style = "margin-bottom: 5px;"),
+      p("* The absolute number of health benefits per city can be found in the full report", style = "margin-bottom: 5px;"),
       p("* Greenness level measured using satellite-derived Normalized Difference Vegetation Index (NDVI).", style = "margin-bottom: 0;")
     )
   )
@@ -120,7 +120,7 @@ tractInfoServer <- function(id, selected_city, selected_tract, tract_data) {
       }
       
       if (length(items) > 0) {
-        HTML(paste(items, collapse = ""))
+        HTML(paste0("<div style='margin-left: 15px;'>", paste(items, collapse = ""), "</div>"))
       } else {
         HTML("Health data pending")
       }
