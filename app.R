@@ -114,7 +114,10 @@ ui <- fluidPage(
             )
           ),
           cityInfoUI("cityInfo"),
-          gaugeUI("gauge")
+          gaugeUI("gauge"),
+          tags$hr(),
+          actionButton("navToCityReview", "Go to City Review", class = "btn-primary w-100 mb-3"),
+          downloadButton("downloadReport1", "Download Report", class = "btn-primary w-100")
         ),
         mapUI("map")
       )
@@ -207,6 +210,11 @@ server <- function(input, output, session) {
     map_selector = reactive(input$mapSelector)
   )
 
+  # Navigate to City Review page
+  observeEvent(input$navToCityReview, {
+    nav_select("navbar", "City Review")
+  })
+
   # Page 2 - City Review ------------------------------------------
 
   selected_tract <- reactiveVal("")
@@ -248,7 +256,7 @@ server <- function(input, output, session) {
     tract_data = tract_map_return$tract_data
   )
   # --- UPDATED DOWNLOAD HANDLER ---
-  output$downloadReport <- downloadHandler(
+  report_download_handler <- downloadHandler(
     filename = function() {
       req(selected_city())
       clean_name <- gsub(" ", "_", selected_city())
@@ -295,6 +303,9 @@ server <- function(input, output, session) {
       ) # End withProgress
     }
   )
+  
+  output$downloadReport <- report_download_handler
+  output$downloadReport1 <- report_download_handler
   
 }
 
