@@ -11,7 +11,7 @@ mapUI <- function(id) {
                   style = "font-size: 0.8em; font-weight: normal;", 
                   "Evaluation of current health benefits of vegetation on the 200 most populated cities in the United States"
                 )),
-    leafletOutput(ns("map"), height = "70vh"),
+    withSpinner(leafletOutput(ns("map"), height = "70vh"), type = 6, color = "#1E4D2B"),
     tags$div(
       class = "footer-banner",
       tags$img(src = "rojosLogo.png", height = "80px"),
