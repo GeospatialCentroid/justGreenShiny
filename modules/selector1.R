@@ -20,23 +20,32 @@ cityInfoUI <- function(id) {
     
     div(
       id = "ndvi_info",
-      tags$b("Greenness Level:"),
+      tags$span("Greenness Level (NDVI):", style = "color: #555; font-weight: 500;"),
       uiOutput(ns("ndvi_comp"), container = tags$span)
     ),
+
+    # --- Health Metrics Group ---
     div(
-      id = "ls_info",
-      tags$b("Lives Saved:"),
-      uiOutput(ns("ls_comp"), container = tags$span)
-    ),
-    div(
-      id = "stroke_info",
-      tags$b("Stroke Cases Prevented:"),
-      uiOutput(ns("scp_comp"), container = tags$span)
-    ),
-    div(
-      id = "deme_info",
-      tags$b("Dementia Cases Prevented:"),
-      uiOutput(ns("dcp_comp"), container = tags$span)
+      style = "margin-top: 10px;",
+      tags$span("Health Metrics per 100,000:", style = "color: #2c3e50; font-weight: bold; display: block; margin-bottom: 5px;"),
+      div(
+        style = "margin-left: 15px;",
+        div(
+          id = "ls_info",
+          tags$span("Lives Saved:", style = "color: #555; font-weight: 500; margin-right: 5px;"),
+          uiOutput(ns("ls_comp"), container = tags$span)
+        ),
+        div(
+          id = "stroke_info",
+          tags$span("Stroke Cases Prevented:", style = "color: #555; font-weight: 500; margin-right: 5px;"),
+          uiOutput(ns("scp_comp"), container = tags$span)
+        ),
+        div(
+          id = "deme_info",
+          tags$span("Dementia Cases Prevented:", style = "color: #555; font-weight: 500; margin-right: 5px;"),
+          uiOutput(ns("dcp_comp"), container = tags$span)
+        )
+      )
     ),
     br(), 
     div(

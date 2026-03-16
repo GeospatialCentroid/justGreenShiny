@@ -120,7 +120,7 @@ tractInfoServer <- function(id, selected_city, selected_tract, tract_data) {
       }
       
       if (length(items) > 0) {
-        HTML(paste(items, collapse = ""))
+        HTML(paste0("<div style='margin-left: 15px;'>", paste(items, collapse = ""), "</div>"))
       } else {
         HTML("Health data pending")
       }
