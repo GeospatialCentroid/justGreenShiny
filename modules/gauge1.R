@@ -55,8 +55,8 @@ gaugeServer <- function(id, cityDF, cityGPKG, selected_city, map_selector) {
     output$gauge_chart <- renderPlotly({
       if (is.null(selected_city()) || selected_city() == "") {
         # Default / National Average View
-        selectedRate <- round(mean(cityGPKG$meanNDVI, na.rm = TRUE), 2)
-        valueRange <- round(range(cityGPKG$meanNDVI), 2)
+        selectedRate <- round(mean(cityGPKG$meanNDVI_500m, na.rm = TRUE), 2)
+        valueRange <- round(range(cityGPKG$meanNDVI_500m), 2)
         current_pal <- RColorBrewer::brewer.pal(n = 8, name = "BuGn")
         
         gaugePlot(
@@ -70,7 +70,7 @@ gaugeServer <- function(id, cityDF, cityGPKG, selected_city, map_selector) {
         # Dynamic View based on Map Selector
         palette_config <- switch(
           map_selector(),
-          "Current Vegetation Levels" = list(pal = "BuGn", col = "meanNDVI"),
+          "Current Vegetation Levels" = list(pal = "BuGn", col = "meanNDVI_500m"),
           "Lives Saved" = list(pal = "PuBuGn", col = "ls_Mortality_Rate"),
           "Stroke Cases Prevented" = list(pal = "BuPu", col = "ls_Stroke_Rate"),
           "Dementia Cases Prevented" = list(pal = "OrRd", col = "ls_Dementia_Rate")

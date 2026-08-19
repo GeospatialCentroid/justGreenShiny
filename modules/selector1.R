@@ -73,7 +73,7 @@ cityInfoServer <- function(id, cityDF, selected_city) {
     
     # Calculate National Averages dynamically
     nat_stats <- list(
-      meanNDVI = abs(round(mean(cityDF$meanNDVI, na.rm = TRUE),2)),
+      meanNDVI_500m = abs(round(mean(cityDF$meanNDVI_500m, na.rm = TRUE),2)),
       ls_Mortality_Rate = abs(round(mean(cityDF$ls_Mortality_Rate, na.rm = TRUE),0)),
       ls_Stroke_Rate = abs(round(mean(cityDF$ls_Stroke_Rate, na.rm = TRUE),0)),
       ls_Dementia_Rate = abs(round(mean(cityDF$ls_Dementia_Rate, na.rm = TRUE), 0))
@@ -99,10 +99,10 @@ cityInfoServer <- function(id, cityDF, selected_city) {
     # -------------------------------
     
     output$ndvi_comp <- renderUI({
-      nat_val <- round(nat_stats$meanNDVI, 2)
+      nat_val <- round(nat_stats$meanNDVI_500m, 2)
       
       if (selected_city() != "") {
-        city_val <- round(selectedData()$meanNDVI, 2)
+        city_val <- round(selectedData()$meanNDVI_500m, 2)
         render_comparison(city_val, nat_val)
       } else {
         HTML(paste0("<span>--</span><div style='margin-bottom: 12px; color: #666;'>200 Cities Average: ", nat_val, "</div>"))

@@ -29,7 +29,7 @@ tractMapUI <- function(id) {
 }
 
 # Census Tract Map Module Server
-tractMapServer <- function(id, selected_city, cityGPKG, tractsDF, tract_metric, active_tab) {
+tractMapServer <- function(id, selected_city, cityGPKG, tractsGPKG, tractsDF, tract_metric, active_tab) {
   moduleServer(id, function(input, output, session) {
     
     # Define consistent names for layers
@@ -48,16 +48,18 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsDF, tract_metric, 
     tract_data <- reactive({
       req(selected_city(), selected_city() != "")
       req(active_tab() == "City Review")
-      # Pauses for 1 second to let the spinner show
-      Sys.sleep(1) 
       
-      allTracts <- readRDS("data/tractsGPKG.rds") 
+      # Minimal delay for spinner visibility
+      Sys.sleep(0.2) 
       
       city_info <- cityGPKG[cityGPKG$fullCity == selected_city(), ]
       geoid  <- city_info$GEOID
-      tracts <- allTracts[[geoid]]
+      tracts <- tractsGPKG[[geoid]]
       
-      # FIX: Add distinct() to ensure one row per GEOID
+      # Ensure data exists for this city
+      if (is.null(tracts)) return(NULL)
+      
+      # Join with health data
       ct_health <- tractsDF |>
         dplyr::filter(GEOID %in% tracts$GEOID) |>
         dplyr::distinct(GEOID, .keep_all = TRUE) 
@@ -107,7 +109,7 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsDF, tract_metric, 
         tract_metric(),
         "Current Vegetation Levels" = list(
           palette = "BuGn",            
-          col = "meanNDVI",
+          col = "meanNDVI_500m",
           title = "Greenness level<br>(NDVI)",
           legend_type = "numeric",
           decimals = 1
@@ -202,7 +204,7 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsDF, tract_metric, 
               "<b>Census Tract:</b> ", GEOID, "<br>",
               "<hr style='margin: 5px 0;'>",
               "<b>Population (20+):</b>", format(over20, big.mark = ","), "<br>",
-              "<b>Greenness (NDVI):</b> ", round(meanNDVI, 3), "<br>",
+              "<b>Greenness (NDVI):</b> ", round(meanNDVI_500m, 3), "<br>",
               "<b>Lives Saved:</b> ", round(ls_Mortality_Rate, 0), " <small>(per 100k)</small><br>",
               "<b>Strokes Prevented:</b> ", round(ls_Stroke_Rate, 0), " <small>(per 100k)</small><br>",
               "<b>Dementia Prevented:</b> ", round(ls_Dementia_Rate, 0), " <small>(per 100k)</small><br>",

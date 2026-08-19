@@ -86,8 +86,8 @@ tractInfoServer <- function(id, selected_city, selected_tract, tract_data) {
     output$tract_ndvi <- renderUI({
       info <- current_tract_data()
       if (is.null(info)) return(HTML("--"))
-      if ("meanNDVI" %in% names(info)) {
-        ndvi_val <- round(info$meanNDVI, 3) 
+      if ("meanNDVI_500m" %in% names(info)) {
+        ndvi_val <- round(info$meanNDVI_500m, 3) 
         HTML(as.character(ndvi_val))
       } else {
         HTML("--")

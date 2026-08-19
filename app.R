@@ -17,17 +17,13 @@ circleRadius <- 10
 cityGPKG <- readRDS("data/citiesGPKG.rds")
 healthData <- readRDS("data/healthData.rds")
 cityDF <- healthData[[1]]
-# might want to change to read in on census track page 
 tractsDF <- healthData[[2]]
+
+# Load tracts GPKG once to improve performance
+tractsGPKG <- readRDS("data/tractsGPKG.rds")
 
 # read in summary html data 
 citySummary <- readRDS("data/citySummary.rds")
-# temp export as csv for city and tract data 
-# readr::write_csv(cityDF, "cityHealth.csv")
-# readr::write_csv(tractsDF, "censusTractsHealth.csv")
-
-# cityGPKG <- sf::st_read("data/top200_simple.gpkg")
-# cityDF <- read.csv("data/top200.csv")
 cityCentroid <- readRDS("data/centroidGPKG.rds")
 
 # Source functions and modules
@@ -184,7 +180,8 @@ server <- function(input, output, session) {
     cityGPKG = cityGPKG,
     cityCentroid = cityCentroid,
     selected_city = selected_city,
-    map_selector = reactive(input$mapSelector)
+    map_selector = reactive(input$mapSelector),
+    zoom_switch = zoom_switch
   )
 
   # Update selected city from map click
@@ -238,6 +235,7 @@ server <- function(input, output, session) {
     "tractMap",
     selected_city = selected_city,
     cityGPKG = cityGPKG,
+    tractsGPKG = tractsGPKG,
     tractsDF = tractsDF,
     tract_metric = reactive(input$tractMetric),
     active_tab = reactive(input$navbar)

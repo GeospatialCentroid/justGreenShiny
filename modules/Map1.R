@@ -29,11 +29,11 @@ mapUI <- function(id) {
 }
 
 # Map Module Server
-mapServer <- function(id, cityGPKG, cityCentroid, selected_city, map_selector) {
+mapServer <- function(id, cityGPKG, cityCentroid, selected_city, map_selector, zoom_switch) {
   moduleServer(id, function(input, output, session) {
     
     # Map palettes
-    pal1 <- colorNumeric(palette = "BuGn", domain = as.numeric(cityGPKG$meanNDVI))
+    pal1 <- colorNumeric(palette = "BuGn", domain = as.numeric(cityGPKG$meanNDVI_500m))
     pal2 <- colorNumeric(palette = "PuBuGn", domain = as.numeric(cityGPKG$ls_Mortality_Rate))
     pal3 <- colorNumeric(palette = "BuPu", domain = as.numeric(cityGPKG$ls_Stroke_Rate))
     pal4 <- colorNumeric(palette = "OrRd", domain = as.numeric(cityGPKG$ls_Dementia_Rate))
@@ -70,7 +70,7 @@ mapServer <- function(id, cityGPKG, cityCentroid, selected_city, map_selector) {
     output$map <- renderLeaflet({
       
       # Generate default legend (NDVI)
-      leg_params <- get_legend_params(cityGPKG$meanNDVI, pal1, decimals = 1)
+      leg_params <- get_legend_params(cityGPKG$meanNDVI_500m, pal1, decimals = 1)
       
       leaflet() |>
         addProviderTiles(providers$CartoDB.Positron, group = "Simple Map") |>
@@ -83,7 +83,7 @@ mapServer <- function(id, cityGPKG, cityCentroid, selected_city, map_selector) {
           radius = 10,
           stroke = FALSE,
           layerId = ~fullCity,
-          fillColor = ~ pal1(meanNDVI),
+          fillColor = ~ pal1(meanNDVI_500m),
           fillOpacity = 0.8,
           popup = ~popup,
           label = ~fullCity
@@ -91,7 +91,7 @@ mapServer <- function(id, cityGPKG, cityCentroid, selected_city, map_selector) {
         addPolygons(
           data = cityGPKG,
           group = "cityPoly",
-          fillColor = ~ pal1(meanNDVI),
+          fillColor = ~ pal1(meanNDVI_500m),
           color = "black",
           weight = 0.5,
           layerId = ~fullCity,
@@ -125,7 +125,7 @@ mapServer <- function(id, cityGPKG, cityCentroid, selected_city, map_selector) {
           map_selector(),
           "Current Vegetation Levels" = list(
             pal = pal1,
-            col = "meanNDVI",
+            col = "meanNDVI_500m",
             title = "Greenness level<br>(NDVI)",
             decimals = 1
           ),
@@ -200,7 +200,7 @@ mapServer <- function(id, cityGPKG, cityCentroid, selected_city, map_selector) {
       req(input$map_zoom)
       proxy <- leafletProxy("map")
       
-      if (input$map_zoom >= 9) {
+      if (input$map_zoom >= zoom_switch) {
         proxy |> showGroup("cityPoly") |> hideGroup("cityPoints")
       } else {
         proxy |> showGroup("cityPoints") |> hideGroup("cityPoly")
