@@ -75,7 +75,7 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsGPKG, tractsDF, tr
       validate(need(selected_city() != "", "Please select a city from the sidebar to view tract details."))
       leaflet() |>
         addMapPane("borders", zIndex = 410) |> 
-        addProviderTiles(providers$CartoDB.Positron, group = "Simple Map") |>
+        addProviderTiles(providers$Esri.WorldGrayCanvas, group = "Simple Map") |>
         addTiles(group = "Street Map") |>
         addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") |>
         setView(lng = -98.57, lat = 39.82, zoom = 4) |> 

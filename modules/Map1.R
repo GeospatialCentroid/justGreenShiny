@@ -73,7 +73,7 @@ mapServer <- function(id, cityGPKG, cityCentroid, selected_city, map_selector, z
       leg_params <- get_legend_params(cityGPKG$meanNDVI_500m, pal1, decimals = 1)
       
       leaflet() |>
-        addProviderTiles(providers$CartoDB.Positron, group = "Simple Map") |>
+        addProviderTiles(providers$Esri.WorldGrayCanvas, group = "Simple Map") |>
         addTiles(group = "Street Map") |>
         addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") |>
         setView(lng = -99.9018, lat = 39.3812, zoom = 3) |>
