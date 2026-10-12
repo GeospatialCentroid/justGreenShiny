@@ -139,9 +139,9 @@ JustGreen was built by the **Rojas Lab** and the **Geospatial Centroid** at Colo
 
 If you use JustGreen in research, planning documents, or advocacy, please cite:
 
-*[Citation format to be added]*
+Rojas-Rueda, D., Kondo, M. C., & Carver, D. (2027). JustGreen: Health impact assessment of urban vegetation across the 200 most populated US cities. *Landscape and Urban Planning*, 277, 105764.
 
-**Original publication:** [Link to be added]
+**Original publication:** [https://doi.org/10.1016/j.landurbplan.2026.105764](https://doi.org/10.1016/j.landurbplan.2026.105764)
 
 <p style="text-align: center; margin-top: 40px; color: #666; font-size: 0.9em;">
   © 2026 Colorado State University
