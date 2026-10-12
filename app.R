@@ -1,6 +1,7 @@
 # Load libraries
 library(shiny)
 library(leaflet)
+library(sf)        # tract and city layers are sf objects; needed for sf-aware dplyr joins and subsetting
 library(ggplot2)
 library(plotly)
 library(DT)

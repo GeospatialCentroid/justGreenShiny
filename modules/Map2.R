@@ -16,7 +16,7 @@ tractMapUI <- function(id) {
       class = "footer-banner",
       tags$img(src = "rojosLogo.png", height = "80px"),
       tags$span(
-        "Rojos Lab - Geospatial Centroid",
+        "Rojas Lab - Geospatial Centroid",
         tags$br(),
         "Colorado State University © 2026"
       ),
@@ -47,7 +47,6 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsGPKG, tractsDF, tr
     # 1. Load tract data
     tract_data <- reactive({
       req(selected_city(), selected_city() != "")
-      req(active_tab() == "City Review")
       
       # Minimal delay for spinner visibility
       Sys.sleep(0.2) 
@@ -70,43 +69,15 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsGPKG, tractsDF, tr
       return(tracts)
     })
     
-    # 2. Initialize map
-    output$tract_map <- renderLeaflet({
-      validate(need(selected_city() != "", "Please select a city from the sidebar to view tract details."))
-      leaflet() |>
-        addMapPane("borders", zIndex = 410) |> 
-        addProviderTiles(providers$Esri.WorldGrayCanvas, group = "Simple Map") |>
-        addTiles(group = "Street Map") |>
-        addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") |>
-        setView(lng = -98.57, lat = 39.82, zoom = 4) |> 
-        addLayersControl(
-          baseGroups = c("Simple Map", "Street Map", "Satellite"),
-          overlayGroups = c(data_layer_group, boundary_group), 
-          options = layersControlOptions(collapsed = FALSE)
-        )|>
-        addPolygons(
-          data = city_boundary(),
-          group = boundary_group,
-          fill = FALSE,         
-          color = "#52525295",  
-          weight = 3,           
-          opacity = 1,
-          options = pathOptions(pane = "borders", clickable = FALSE) 
-        )
-    })
-    
-    # 4. Update Tracts (Proxy)
-    observe({
-      req(active_tab() == "City Review")
-      req(tract_data())
-      req(tract_metric()) 
-      
-      tract_sf <- tract_data()
+    # Draw the tract layer and legend for one metric.
+    # `map` is either a fresh leaflet() object (initial render) or a leafletProxy()
+    # (metric change), so the same code serves both and the first view of the
+    # City Review tab always carries tracts without waiting for a proxy update.
+    draw_tracts <- function(map, tract_sf, metric) {
       bounds <- sf::st_bbox(tract_sf)
       
-      # Define config for coloring (remains the same)
       metric_config <- switch(
-        tract_metric(),
+        metric,
         "Current Vegetation Levels" = list(
           palette = "BuGn",            
           col = "meanNDVI_500m",
@@ -145,6 +116,10 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsGPKG, tractsDF, tr
         )
       )
       
+      map <- map |>
+        clearGroup(data_layer_group) |>
+        removeControl(layerId = legend_id)
+      
       if (!is.null(metric_config) && metric_config$col %in% names(tract_sf)) {
         
         # Calculate domain explicitly for clamping
@@ -159,9 +134,7 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsGPKG, tractsDF, tr
         # Clean up the title for the label (remove <br> tags)
         clean_title <- gsub("<br>", " ", metric_config$title)
         
-        proxy <- leafletProxy("tract_map") |>
-          clearGroup(data_layer_group) |>
-          removeControl(layerId = legend_id) |> 
+        map <- map |>
           addPolygons(
             data = tract_sf,
             group = data_layer_group, 
@@ -177,19 +150,17 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsGPKG, tractsDF, tr
               bringToFront = FALSE 
             ),
             
-            # --- UPDATED HOVER LABEL (Population instead of ID) ---
+            # Hover label: metric value and population
             label = ~ lapply(seq_len(nrow(tract_sf)), function(i) {
               val <- tract_sf[[metric_config$col]][i]
-              pop_val <- tract_sf$over20[i] # Assumes 'over20' is in your data
+              pop_val <- tract_sf$over20[i]
               
-              # Formatting logic
               formatted_val <- if(metric_config$decimals == 0) {
                 format(round(val, 0), big.mark = ",")
               } else {
                 round(val, metric_config$decimals)
               }
               
-              # Construct HTML Label
               HTML(paste0(
                 "<div style='font-family: Poppins, sans-serif;'>",
                 "<b>", clean_title, ": </b>", formatted_val, "<br/>",
@@ -197,10 +168,8 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsGPKG, tractsDF, tr
                 "</div>"
               ))
             }),
-            # ------------------------------------------------------
             
             popup = ~ paste0(
-              # Keep the ID in the popup for the 1% of users (researchers) who might need it
               "<b>Census Tract:</b> ", GEOID, "<br>",
               "<hr style='margin: 5px 0;'>",
               "<b>Population (20+):</b>", format(over20, big.mark = ","), "<br>",
@@ -212,12 +181,11 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsGPKG, tractsDF, tr
             )
           )
         
-        # --- LEGEND LOGIC (Remains the same) ---
-        
+        # --- LEGEND ---
         if (metric_config$legend_type == "qualitative") {
           svi_colors <- RColorBrewer::brewer.pal(5, "YlGnBu")
           
-          proxy |> addLegend(
+          map <- map |> addLegend(
             layerId = legend_id,
             colors = rev(svi_colors), 
             labels = c("High", "", "Medium", "", "Low"),
@@ -237,29 +205,19 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsGPKG, tractsDF, tr
             dec <- if(!is.null(metric_config$decimals)) metric_config$decimals else 2
             clean_labels <- round(breaks, dec)
             
-            legend_colors <- rev(break_colors)
-            legend_labels <- rev(clean_labels)
-            
-            proxy |> addLegend(
+            map <- map |> addLegend(
               layerId = legend_id, 
-              colors = legend_colors, 
-              labels = legend_labels,
+              colors = rev(break_colors), 
+              labels = rev(clean_labels),
               title = metric_config$title,
               position = "bottomright",
               opacity = 0.7
             )
           }
         }
-        
-        proxy |> fitBounds(
-          lng1 = bounds[["xmin"]], lat1 = bounds[["ymin"]],
-          lng2 = bounds[["xmax"]], lat2 = bounds[["ymax"]]
-        )
       } else {
-        # Fallback
-        leafletProxy("tract_map") |>
-          clearGroup(data_layer_group) |>
-          removeControl(layerId = legend_id) |>
+        # Fallback: plain tracts
+        map <- map |>
           addPolygons(
             data = tract_sf,
             group = data_layer_group, 
@@ -269,13 +227,53 @@ tractMapServer <- function(id, selected_city, cityGPKG, tractsGPKG, tractsDF, tr
             weight = 1,
             layerId = ~GEOID,
             label = ~ paste("Tract:", GEOID)
-          ) |>
-          fitBounds(
-            lng1 = bounds[["xmin"]], lat1 = bounds[["ymin"]],
-            lng2 = bounds[["xmax"]], lat2 = bounds[["ymax"]]
           )
       }
+      
+      map |> fitBounds(
+        lng1 = bounds[["xmin"]], lat1 = bounds[["ymin"]],
+        lng2 = bounds[["xmax"]], lat2 = bounds[["ymax"]]
+      )
+    }
+    
+    # 2. Initialize map, with the tracts for the current metric drawn in the
+    #    same render. Re-runs when the city changes; the metric is isolated so
+    #    metric changes go through the proxy below instead of a full re-render.
+    output$tract_map <- renderLeaflet({
+      validate(need(selected_city() != "", "Please select a city from the sidebar to view tract details."))
+      map <- leaflet() |>
+        addMapPane("borders", zIndex = 410) |> 
+        addProviderTiles(providers$Esri.WorldGrayCanvas, group = "Simple Map") |>
+        addProviderTiles(providers$Esri.WorldStreetMap, group = "Street Map") |>
+        addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") |>
+        setView(lng = -98.57, lat = 39.82, zoom = 4) |> 
+        addLayersControl(
+          baseGroups = c("Simple Map", "Street Map", "Satellite"),
+          overlayGroups = c(data_layer_group, boundary_group), 
+          options = layersControlOptions(collapsed = FALSE)
+        )|>
+        addPolygons(
+          data = city_boundary(),
+          group = boundary_group,
+          fill = FALSE,         
+          color = "#52525295",  
+          weight = 3,           
+          opacity = 1,
+          options = pathOptions(pane = "borders", clickable = FALSE) 
+        )
+      
+      tract_sf <- tract_data()
+      if (!is.null(tract_sf)) {
+        map <- draw_tracts(map, tract_sf, isolate(tract_metric()))
+      }
+      map
     })
+    
+    # 4. Update tracts when the metric changes (proxy, no full re-render)
+    observeEvent(tract_metric(), {
+      req(tract_data())
+      draw_tracts(leafletProxy("tract_map"), tract_data(), tract_metric())
+    }, ignoreInit = TRUE)
     
     # Return clicked tract ID
     clicked_tract <- reactive({

@@ -16,7 +16,7 @@ mapUI <- function(id) {
       class = "footer-banner",
       tags$img(src = "rojosLogo.png", height = "80px"),
       tags$span(
-        "Rojos Lab - Geospatial Centroid",
+        "Rojas Lab - Geospatial Centroid",
         tags$br(),
         "Colorado State University © 2026"
       ),
@@ -74,7 +74,7 @@ mapServer <- function(id, cityGPKG, cityCentroid, selected_city, map_selector, z
       
       leaflet() |>
         addProviderTiles(providers$Esri.WorldGrayCanvas, group = "Simple Map") |>
-        addTiles(group = "Street Map") |>
+        addProviderTiles(providers$Esri.WorldStreetMap, group = "Street Map") |>
         addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") |>
         setView(lng = -99.9018, lat = 39.3812, zoom = 3) |>
         addCircleMarkers(
